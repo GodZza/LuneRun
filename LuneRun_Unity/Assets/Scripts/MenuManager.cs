@@ -192,18 +192,34 @@ namespace LuneRun
         public void OnSurvivorsButtonClicked()
         {
             // Show survivors/highscores
-            Debug.Log("Survivors button clicked - fetching highscores");
-            if (runnerApi != null)
+            Debug.Log("Survivors button clicked - showing highscore panel");
+            
+            if (runnerApi != null && HighscoreManager.Instance != null)
             {
-                // Fetch highscores for all levels (or just level 1 for demo)
-                runnerApi.GetHighscore(1, (entries) =>
-                {
-                    Debug.Log($"Retrieved {entries.Count} highscore entries");
-                    foreach (var entry in entries)
+                int userId = runnerApi.GetUserId();
+                bool lastUnlocked = isLastUnlocked;
+                
+                // Show highscore panel for level 1
+                HighscoreManager.Instance.ShowLevelHighscore(
+                    levelId: 1,
+                    userId: userId,
+                    runnerApi: runnerApi,
+                    onClose: () =>
                     {
-                        Debug.Log($"{entry.rank}. {entry.playerName}: {entry.score:F2}s ({entry.date})");
-                    }
-                });
+                        Debug.Log("Highscore panel closed");
+                    },
+                    actionButtonLabel: "Play",
+                    onAction: () =>
+                    {
+                        // Start level 1
+                        OnLevelButtonClicked(1);
+                    },
+                    isLastUnlocked: lastUnlocked
+                );
+            }
+            else
+            {
+                Debug.LogWarning("Cannot show highscore panel: runnerApi or HighscoreManager.Instance is null");
             }
         }
         

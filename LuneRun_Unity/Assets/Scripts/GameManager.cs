@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace LuneRun
 {
@@ -22,6 +23,8 @@ namespace LuneRun
         private bool isHardware = false;
         private int selectedLevel = -1;
         private bool showPostlude = false;
+        private GameObject loginPanel;
+        private GameObject preludePanel;
 
         // References to other managers
         private MenuManager menuManager;
@@ -81,18 +84,108 @@ namespace LuneRun
 
         private void EnterLogin()
         {
-            // TODO: Show login UI
-            Debug.Log("Enter Login");
+            Debug.Log("Enter Login - Creating login UI");
+            
+            // Ensure canvas exists
+            if (uiCanvas == null)
+            {
+                uiCanvas = FindObjectOfType<Canvas>();
+                if (uiCanvas == null)
+                {
+                    GameObject canvasObj = new GameObject("Canvas");
+                    uiCanvas = canvasObj.AddComponent<Canvas>();
+                    uiCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                    canvasObj.AddComponent<CanvasScaler>();
+                    canvasObj.AddComponent<GraphicRaycaster>();
+                }
+            }
+            
+            // Create login panel
+            loginPanel = new GameObject("LoginPanel", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            loginPanel.transform.SetParent(uiCanvas.transform, false);
+            RectTransform panelRt = loginPanel.GetComponent<RectTransform>();
+            panelRt.anchorMin = Vector2.zero;
+            panelRt.anchorMax = Vector2.one;
+            panelRt.offsetMin = Vector2.zero;
+            panelRt.offsetMax = Vector2.zero;
+            
+            // Set background (semi-transparent black)
+            Image panelImg = loginPanel.GetComponent<Image>();
+            panelImg.color = new Color(0f, 0f, 0f, 0.9f);
+            
+            // Create title text
+            GameObject titleObj = new GameObject("TitleText", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+            titleObj.transform.SetParent(loginPanel.transform, false);
+            Text titleText = titleObj.GetComponent<Text>();
+            titleText.text = Constants.Name;
+            titleText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            titleText.fontSize = 96;
+            titleText.color = new Color(1f, 0.8f, 0f); // Orange-yellow
+            titleText.fontStyle = FontStyle.Bold;
+            titleText.alignment = TextAnchor.MiddleCenter;
+            
+            RectTransform titleRt = titleObj.GetComponent<RectTransform>();
+            titleRt.anchorMin = new Vector2(0.5f, 0.5f);
+            titleRt.anchorMax = new Vector2(0.5f, 0.5f);
+            titleRt.pivot = new Vector2(0.5f, 0.5f);
+            titleRt.sizeDelta = new Vector2(800, 150);
+            titleRt.anchoredPosition = new Vector2(0, 100);
+            
+            // Create version text
+            GameObject versionObj = new GameObject("VersionText", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+            versionObj.transform.SetParent(loginPanel.transform, false);
+            Text versionText = versionObj.GetComponent<Text>();
+            versionText.text = Constants.Version;
+            versionText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            versionText.fontSize = 24;
+            versionText.color = new Color(0.7f, 0.7f, 0.7f);
+            versionText.alignment = TextAnchor.MiddleCenter;
+            
+            RectTransform versionRt = versionObj.GetComponent<RectTransform>();
+            versionRt.anchorMin = new Vector2(0.5f, 0.5f);
+            versionRt.anchorMax = new Vector2(0.5f, 0.5f);
+            versionRt.pivot = new Vector2(0.5f, 0.5f);
+            versionRt.sizeDelta = new Vector2(400, 50);
+            versionRt.anchoredPosition = new Vector2(0, 40);
+            
+            // Create instruction text
+            GameObject instructionObj = new GameObject("InstructionText", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+            instructionObj.transform.SetParent(loginPanel.transform, false);
+            Text instructionText = instructionObj.GetComponent<Text>();
+            instructionText.text = "Press any key to start";
+            instructionText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            instructionText.fontSize = 32;
+            instructionText.color = Color.white;
+            instructionText.alignment = TextAnchor.MiddleCenter;
+            
+            RectTransform instructionRt = instructionObj.GetComponent<RectTransform>();
+            instructionRt.anchorMin = new Vector2(0.5f, 0.5f);
+            instructionRt.anchorMax = new Vector2(0.5f, 0.5f);
+            instructionRt.pivot = new Vector2(0.5f, 0.5f);
+            instructionRt.sizeDelta = new Vector2(600, 80);
+            instructionRt.anchoredPosition = new Vector2(0, -80);
+            
+            Debug.Log("Login UI created");
         }
 
         private void UpdateLogin()
         {
-            // TODO: Handle login logic
-            // For now, skip to main menu
+            // Handle login logic
             if (Input.anyKeyDown)
             {
+                DestroyLoginUI();
                 currentState = GameState.MainMenu;
                 EnterMenu();
+            }
+        }
+        
+        private void DestroyLoginUI()
+        {
+            if (loginPanel != null)
+            {
+                Destroy(loginPanel);
+                loginPanel = null;
+                Debug.Log("Login UI destroyed");
             }
         }
 
@@ -150,11 +243,102 @@ namespace LuneRun
 
         private void UpdatePrelude()
         {
-            // TODO: Implement prelude sequence
+            // Create prelude UI if not exists
+            if (preludePanel == null)
+            {
+                CreatePreludeUI();
+            }
+            
+            // Wait for key press to start game
             if (Input.anyKeyDown)
             {
+                DestroyPreludeUI();
                 currentState = GameState.Game;
                 EnterGame();
+            }
+        }
+        
+        private void CreatePreludeUI()
+        {
+            Debug.Log("Creating prelude UI");
+            
+            // Ensure canvas exists
+            if (uiCanvas == null)
+            {
+                uiCanvas = FindObjectOfType<Canvas>();
+                if (uiCanvas == null)
+                {
+                    GameObject canvasObj = new GameObject("Canvas");
+                    uiCanvas = canvasObj.AddComponent<Canvas>();
+                    uiCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                    canvasObj.AddComponent<CanvasScaler>();
+                    canvasObj.AddComponent<GraphicRaycaster>();
+                }
+            }
+            
+            // Create prelude panel
+            preludePanel = new GameObject("PreludePanel", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            preludePanel.transform.SetParent(uiCanvas.transform, false);
+            RectTransform panelRt = preludePanel.GetComponent<RectTransform>();
+            panelRt.anchorMin = Vector2.zero;
+            panelRt.anchorMax = Vector2.one;
+            panelRt.offsetMin = Vector2.zero;
+            panelRt.offsetMax = Vector2.zero;
+            
+            // Set background (semi-transparent black)
+            Image panelImg = preludePanel.GetComponent<Image>();
+            panelImg.color = new Color(0f, 0f, 0f, 0.9f);
+            
+            // Create title text
+            GameObject titleObj = new GameObject("PreludeTitle", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+            titleObj.transform.SetParent(preludePanel.transform, false);
+            Text titleText = titleObj.GetComponent<Text>();
+            titleText.text = "LEVEL 1";
+            titleText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            titleText.fontSize = 72;
+            titleText.color = Color.yellow;
+            titleText.fontStyle = FontStyle.Bold;
+            titleText.alignment = TextAnchor.MiddleCenter;
+            
+            RectTransform titleRt = titleObj.GetComponent<RectTransform>();
+            titleRt.anchorMin = new Vector2(0.5f, 0.5f);
+            titleRt.anchorMax = new Vector2(0.5f, 0.5f);
+            titleRt.pivot = new Vector2(0.5f, 0.5f);
+            titleRt.sizeDelta = new Vector2(600, 100);
+            titleRt.anchoredPosition = new Vector2(0, 150);
+            
+            // Create story text
+            GameObject storyObj = new GameObject("StoryText", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+            storyObj.transform.SetParent(preludePanel.transform, false);
+            Text storyText = storyObj.GetComponent<Text>();
+            storyText.text = "Welcome to Lunerun!\n\n" +
+                            "You are an astronaut running on the moon.\n" +
+                            "Hold SPACE to run, release to jump.\n" +
+                            "Avoid obstacles and reach the goal!\n\n" +
+                            "Press any key to begin.";
+            storyText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            storyText.fontSize = 28;
+            storyText.color = Color.white;
+            storyText.alignment = TextAnchor.MiddleCenter;
+            storyText.lineSpacing = 1.3f;
+            
+            RectTransform storyRt = storyObj.GetComponent<RectTransform>();
+            storyRt.anchorMin = new Vector2(0.5f, 0.5f);
+            storyRt.anchorMax = new Vector2(0.5f, 0.5f);
+            storyRt.pivot = new Vector2(0.5f, 0.5f);
+            storyRt.sizeDelta = new Vector2(700, 400);
+            storyRt.anchoredPosition = new Vector2(0, -50);
+            
+            Debug.Log("Prelude UI created");
+        }
+        
+        private void DestroyPreludeUI()
+        {
+            if (preludePanel != null)
+            {
+                Destroy(preludePanel);
+                preludePanel = null;
+                Debug.Log("Prelude UI destroyed");
             }
         }
 

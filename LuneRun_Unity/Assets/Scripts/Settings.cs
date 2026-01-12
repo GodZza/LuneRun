@@ -14,7 +14,7 @@ namespace LuneRun
         
         public Settings()
         {
-            Load();
+            // 初始化默认值，Load() 将由静态 Load 方法调用
         }
         
         public static Settings Load()
