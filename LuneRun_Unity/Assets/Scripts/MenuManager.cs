@@ -6,21 +6,21 @@ namespace LuneRun
 {
     public class MenuManager : MonoBehaviour
     {
-        [SerializeField] private GameObject mainMenuPanel;
-        [SerializeField] private GameObject helpPanel;
-        [SerializeField] private Button soundButton;
-        [SerializeField] private Button musicButton;
-        [SerializeField] private Button helpButton;
-        [SerializeField] private Button fullscreenButton;
-        [SerializeField] private Button tweetButton;
-        [SerializeField] private Button linkButton;
-        [SerializeField] private Button survivorsButton;
-        [SerializeField] private Button paypalButton;
-        [SerializeField] private Text versionText;
-        [SerializeField] private Text logoText;
+        [SerializeField] public GameObject mainMenuPanel;
+        [SerializeField] public GameObject helpPanel;
+        [SerializeField] public Button soundButton;
+        [SerializeField] public Button musicButton;
+        [SerializeField] public Button helpButton;
+        [SerializeField] public Button fullscreenButton;
+        [SerializeField] public Button tweetButton;
+        [SerializeField] public Button linkButton;
+        [SerializeField] public Button survivorsButton;
+        [SerializeField] public Button paypalButton;
+        [SerializeField] public Text versionText;
+        [SerializeField] public Text logoText;
         
         // Level buttons (1-32)
-        private readonly List<Button> levelButtons = new();
+        public List<Button> levelButtons = new();
         private int selectedLevel = -1;
         private bool isLastUnlocked = false;
         
@@ -43,25 +43,53 @@ namespace LuneRun
             // Update button states based on settings
             UpdateSettings();
             
-            // TODO: Populate level buttons
-            // For now, simulate 32 levels
-            for (int i = 1; i <= 32; i++)
-            {
-                // Create or find level button
-                // Attach listener with level index
-            }
+            // Ensure level buttons exist and have listeners
+            EnsureLevelButtons();
         }
         
         private void UpdateSettings()
         {
             // Update sound/music button icons based on settings
-            if (soundButton != null)
+            if (soundButton != null && settings != null)
             {
-                // Set appropriate sprite for on/off
+                // For now, update button text
+                Text btnText = soundButton.GetComponentInChildren<Text>();
+                if (btnText != null)
+                {
+                    btnText.text = "Sound: " + (settings.GetSoundOn() ? "On" : "Off");
+                }
             }
-            if (musicButton != null)
+            if (musicButton != null && settings != null)
             {
-                // Set appropriate sprite for on/off
+                Text btnText = musicButton.GetComponentInChildren<Text>();
+                if (btnText != null)
+                {
+                    btnText.text = "Music: " + (settings.GetMusicOn() ? "On" : "Off");
+                }
+            }
+        }
+        
+        private void EnsureLevelButtons()
+        {
+            // Ensure we have 32 level buttons
+            if (levelButtons == null)
+            {
+                levelButtons = new List<Button>();
+            }
+            
+            // If no buttons are provided, we cannot create them without a parent.
+            // This method assumes buttons are already created by editor tool.
+            // Just ensure each button has the correct click listener.
+            for (int i = 0; i < levelButtons.Count; i++)
+            {
+                int level = i + 1;
+                Button btn = levelButtons[i];
+                if (btn != null)
+                {
+                    // Remove existing listeners and add our own
+                    btn.onClick.RemoveAllListeners();
+                    btn.onClick.AddListener(() => OnLevelButtonClicked(level));
+                }
             }
         }
         
@@ -72,10 +100,19 @@ namespace LuneRun
             isLastUnlocked = userData.GetScore(32) != 0f;
             
             // Update button backgrounds
-            for (int i = 1; i <= 32; i++)
+            if (levelButtons != null && levelButtons.Count >= 32)
             {
-                bool unlocked = userData.GetScore(i) != 0f;
-                // Update button appearance
+                for (int i = 0; i < 32; i++)
+                {
+                    bool unlocked = userData.GetScore(i + 1) != 0f;
+                    Button btn = levelButtons[i];
+                    if (btn != null)
+                    {
+                        // Update button appearance based on unlocked status
+                        // For now, just enable/disable interactable
+                        btn.interactable = unlocked || (runnerApi is LocalRunnerApi);
+                    }
+                }
             }
         }
         
@@ -117,10 +154,22 @@ namespace LuneRun
             UpdateSettings();
         }
         
-        public static void OnHelpButtonClicked()
+        public void OnHelpButtonClicked()
         {
-            // TODO: Implement help panel
-            Debug.Log("Help button clicked");
+            ToggleHelpPanel();
+        }
+        
+        private void ToggleHelpPanel()
+        {
+            if (helpPanel != null)
+            {
+                helpPanel.SetActive(!helpPanel.activeSelf);
+                Debug.Log($"Help panel {(helpPanel.activeSelf ? "shown" : "hidden")}");
+            }
+            else
+            {
+                Debug.LogWarning("Help panel reference is null");
+            }
         }
         
         public static void OnFullscreenButtonClicked()
@@ -140,10 +189,22 @@ namespace LuneRun
             Application.OpenURL("http://www.playchilla.com/runner");
         }
         
-        public static void OnSurvivorsButtonClicked()
+        public void OnSurvivorsButtonClicked()
         {
             // Show survivors/highscores
-            Debug.Log("Survivors button clicked");
+            Debug.Log("Survivors button clicked - fetching highscores");
+            if (runnerApi != null)
+            {
+                // Fetch highscores for all levels (or just level 1 for demo)
+                runnerApi.GetHighscore(1, (entries) =>
+                {
+                    Debug.Log($"Retrieved {entries.Count} highscore entries");
+                    foreach (var entry in entries)
+                    {
+                        Debug.Log($"{entry.rank}. {entry.playerName}: {entry.score:F2}s ({entry.date})");
+                    }
+                });
+            }
         }
         
         public static void OnPayPalButtonClicked()

@@ -10,37 +10,46 @@ namespace LuneRun
 This is a port of the Flash game 'Lunerun' to Unity.
 
 1. BASIC SETUP:
-   - Attach the 'Bootstrapper' script to any GameObject in your starting scene.
-   - Ensure you have a Camera tagged 'MainCamera' and a Canvas for UI.
+   - Open the 'Main' scene in Assets/Scenes/.
+   - If the scene is empty, run the automatic setup tool (see step 2).
 
-2. PREFAB CREATION (optional):
+2. AUTOMATIC UI SETUP (RECOMMENDED):
+   - In the Unity menu, go to: Tools → LuneRun → Setup Scene UI
+   - This will create:
+     * Bootstrapper GameObject
+     * Canvas with all required UI buttons
+     * MenuManager with all references pre-assigned
+     * GameManager, AudioManager, HighscoreManager GameObjects
+   - Save the scene after setup.
+
+3. PREFAB CREATION (optional):
    - Create an empty GameObject named 'GameManagers'.
    - Add the following components: GameManager, AudioManager, HighscoreManager.
    - Save as a prefab for easy reuse.
 
-3. UI SETUP:
+4. UI SETUP (if not using automatic setup):
    - Create a Canvas with Screen Space Overlay.
    - Add buttons for sound, music, help, fullscreen, tweet, link, survivors, paypal.
    - Hook up button events to MenuManager methods.
 
-4. AUDIO SETUP:
+5. AUDIO SETUP:
    - Assign sound and music clips in the AudioManager inspector.
    - Configure volumes as desired.
 
-5. LEVEL DESIGN:
+6. LEVEL DESIGN:
    - Use TrackGenerator to create tracks for each level.
    - Adjust segment length, slope angles, and visual appearance.
 
-6. PLAYER CONTROLS:
+7. PLAYER CONTROLS:
    - The PlayerController uses CharacterController for movement.
    - Hold SPACE to run, release to jump.
    - Press SPACE in air to land quicker.
 
-7. HIGHSCORES:
+8. HIGHSCORES:
    - Configure HighscoreManager with UI elements.
    - Implement IRunnerApi for online functionality or use LocalRunnerApi for testing.
 
-8. START THE GAME:
+9. START THE GAME:
    - The Bootstrapper will automatically spawn managers and go to the main menu.
 
 NOTES:

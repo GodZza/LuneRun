@@ -27,6 +27,10 @@ namespace LuneRun
         private MenuManager menuManager;
         private LevelManager levelManager;
         private AudioManager audioManager;
+        
+        // Core game objects
+        private Settings settings;
+        private IRunnerApi runnerApi;
 
         private void Awake()
         {
@@ -99,7 +103,19 @@ namespace LuneRun
             {
                 GameObject menuObj = new GameObject("MenuManager");
                 menuManager = menuObj.AddComponent<MenuManager>();
-                // TODO: Initialize menu with settings and runner API
+                
+                // Initialize settings and runner API if not already done
+                if (settings == null)
+                {
+                    settings = Settings.Load();
+                }
+                if (runnerApi == null)
+                {
+                    runnerApi = new LocalRunnerApi();
+                }
+                
+                // Initialize the menu manager
+                menuManager.Initialize(settings, runnerApi);
             }
         }
 
@@ -148,7 +164,20 @@ namespace LuneRun
             {
                 GameObject levelObj = new GameObject("LevelManager");
                 levelManager = levelObj.AddComponent<LevelManager>();
-                // TODO: Initialize level with view, selectedLevel, runner API, settings, isHardware
+                
+                // Ensure settings and runner API exist
+                if (settings == null)
+                {
+                    settings = Settings.Load();
+                }
+                if (runnerApi == null)
+                {
+                    runnerApi = new LocalRunnerApi();
+                }
+                
+                // Initialize the level manager
+                Camera view = mainCamera != null ? mainCamera : Camera.main;
+                levelManager.Initialize(view, selectedLevel, runnerApi, settings, isHardware);
             }
         }
 

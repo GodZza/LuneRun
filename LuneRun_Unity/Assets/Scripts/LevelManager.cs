@@ -16,6 +16,7 @@ namespace LuneRun
         private bool hasFailed = false;
         private bool hasCompleted = false;
         private bool shouldExit = false;
+        private float playerDistance = 0f;
         
         // References
         private PlayerController playerController;
@@ -55,13 +56,22 @@ namespace LuneRun
             if (playerController != null)
             {
                 playerController.UpdatePlayer();
+                
+                // Update player distance along track (simplified using Z coordinate)
+                playerDistance = Mathf.Max(playerDistance, playerController.transform.position.z);
+                
+                // Check for failure: player fell off track
+                if (playerController.transform.position.y < -10f)
+                {
+                    FailLevel();
+                }
+                
+                // Check for completion: reached end of track
+                if (trackGenerator != null && playerDistance >= trackGenerator.GetTotalLength())
+                {
+                    CompleteLevel();
+                }
             }
-            
-            // Check for failure conditions
-            // TODO: Implement failure detection
-            
-            // Check for completion
-            // TODO: Implement completion detection
             
             // Handle input for highscore display
             if (Input.GetKeyDown(KeyCode.Tab))
