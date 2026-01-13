@@ -26,6 +26,7 @@ namespace LuneRun
         
         public void Initialize(Camera view, int levelId, IRunnerApi runnerApi, Settings settings, bool isHardware)
         {
+            Debug.Log($"[LuneRun] LevelManager.Initialize - level {levelId}, camera {view}");
             this.viewCamera = view;
             this.levelId = levelId;
             this.runnerApi = runnerApi;
@@ -36,6 +37,7 @@ namespace LuneRun
             trackGenerator = GetComponent<TrackGenerator>();
             if (trackGenerator == null)
             {
+                Debug.Log("[LuneRun] Adding TrackGenerator component");
                 trackGenerator = gameObject.AddComponent<TrackGenerator>();
             }
             trackGenerator.GenerateTrack(levelId);

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 
 namespace ActionScript
@@ -6,6 +7,7 @@ namespace ActionScript
     /// <summary>
     /// Mimics Flash DisplayObject for display list operations.
     /// </summary>
+    [SuppressMessage("Style", "IDE1006:Naming Styles")]
     public class DisplayObject : EventDispatcher
     {
         protected GameObject _gameObject;

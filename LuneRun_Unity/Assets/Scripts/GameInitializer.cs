@@ -25,6 +25,7 @@ namespace LuneRun
         
         private void Start()
         {
+            Debug.Log("[LuneRun] GameInitializer.Start - Starting game...");
             // Load player settings
             Settings settings = Settings.Load();
             
@@ -33,6 +34,7 @@ namespace LuneRun
             if (useLocalRunnerApi)
             {
                 runnerApi = new LocalRunnerApi();
+                Debug.Log("[LuneRun] Using LocalRunnerApi");
             }
             else
             {
@@ -41,15 +43,18 @@ namespace LuneRun
                 string userName = PlayerPrefs.GetString("PlayerName", "Player" + userId);
                 ApiUser mockUser = new ApiUser(userId, userName);
                 runnerApi = new RunnerApi(Constants.RunnerApiUrl, mockUser);
+                Debug.Log("[LuneRun] Using online RunnerApi");
             }
             
             // Start game flow
             if (skipLogin || Constants.SkipToGame)
             {
+                Debug.Log($"[LuneRun] SkipToGame=true, starting level 1");
                 gameManager.StartGame(1); // Start with level 1
             }
             else
             {
+                Debug.Log("[LuneRun] Going to main menu");
                 gameManager.GoToMainMenu();
             }
         }

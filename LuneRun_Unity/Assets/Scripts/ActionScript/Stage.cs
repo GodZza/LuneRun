@@ -36,17 +36,17 @@ namespace ActionScript
             // Stage doesn't need a GameObject, it's a conceptual representation
         }
         
-        public void AddEventListener(string type, System.Action<Event> listener)
+        public new void AddEventListener(string type, System.Action<Event> listener)
         {
             base.AddEventListener(type, listener);
         }
         
-        public void RemoveEventListener(string type, System.Action<Event> listener)
+        public new void RemoveEventListener(string type, System.Action<Event> listener)
         {
             base.RemoveEventListener(type, listener);
         }
         
-        public bool HasEventListener(string type)
+        public new bool HasEventListener(string type)
         {
             return base.HasEventListener(type);
         }
