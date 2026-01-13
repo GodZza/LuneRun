@@ -31,8 +31,11 @@ namespace LuneRun
                 characterController.radius = 0.5f;
             }
             
-            // Reset position
-            transform.position = Vector3.zero;
+            // Set ground layer to include all layers
+            groundLayer = -1;
+            
+            // Reset position slightly above track surface
+            transform.position = new Vector3(0, 0.5f, 0);
             velocity = Vector3.zero;
         }
         
@@ -112,7 +115,7 @@ namespace LuneRun
         public void Reset()
         {
             velocity = Vector3.zero;
-            transform.position = Vector3.zero;
+            transform.position = new Vector3(0, 0.5f, 0);
             isJumping = false;
         }
         

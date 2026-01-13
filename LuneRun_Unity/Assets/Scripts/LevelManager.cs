@@ -32,18 +32,21 @@ namespace LuneRun
             this.settings = settings;
             this.isHardware = isHardware;
             
-            // Create player
-            GameObject playerObj = new GameObject("Player");
-            playerController = playerObj.AddComponent<PlayerController>();
-            playerController.Initialize(settings);
-            
-            // Generate track
+            // Generate track first
             trackGenerator = GetComponent<TrackGenerator>();
             if (trackGenerator == null)
             {
                 trackGenerator = gameObject.AddComponent<TrackGenerator>();
             }
             trackGenerator.GenerateTrack(levelId);
+            
+            // Create player and place on track start
+            GameObject playerObj = new GameObject("Player");
+            playerController = playerObj.AddComponent<PlayerController>();
+            playerController.Initialize(settings);
+            
+            // Place player at track start with slight offset above surface
+            playerController.transform.position = new Vector3(0, 0.5f, 0);
             
             // Position camera
             if (viewCamera != null)
@@ -63,7 +66,7 @@ namespace LuneRun
                 playerDistance = Mathf.Max(playerDistance, playerController.transform.position.z);
                 
                 // Check for failure: player fell off track
-                if (playerController.transform.position.y < -10f)
+                if (playerController.transform.position.y < -50f)
                 {
                     FailLevel();
                 }
@@ -252,10 +255,17 @@ namespace LuneRun
         // Called when player fails (e.g., falls off track)
         public void FailLevel()
         {
+            // Prevent multiple consecutive failures
+            if (hasFailed) return;
+            
             hasFailed = true;
             
             // Restart level with delay
             Debug.Log("Level failed, restarting in 1 second");
+            if (playerController != null)
+            {
+                Debug.Log($"Player position: {playerController.transform.position}, grounded: {playerController.IsOnGround()}");
+            }
             
             // Reset player position immediately
             playerController?.Reset();
