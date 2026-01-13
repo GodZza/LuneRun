@@ -81,8 +81,8 @@ namespace LuneRun
                     FailLevel();
                 }
                 
-                // Check for completion: reached end of track
-                if (trackGenerator != null && playerDistance >= trackGenerator.GetTotalLength())
+                // Check for completion: reached end of track (skip for infinite mode)
+                if (trackGenerator != null && playerDistance >= trackGenerator.GetTotalLength() && levelId != Constants.Tab3InfiniteLevelId)
                 {
                     CompleteLevel();
                 }

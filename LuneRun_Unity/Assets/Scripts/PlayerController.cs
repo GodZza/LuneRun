@@ -218,6 +218,25 @@ namespace LuneRun
             // In ActionScript, this uses _track.getClosestPart(), surface detection, etc.
             // For now, we'll keep basic ground detection via CharacterController
             // TODO: Implement proper track collision
+            // Basic raycast implementation for track collision detection
+            RaycastHit hit;
+            float rayLength = 0.5f; // Adjust based on player size
+            Vector3 rayOrigin = transform.position + Vector3.up * 0.1f; // Slight offset from feet
+            Vector3 rayDirection = Vector3.down;
+            
+            if (Physics.Raycast(rayOrigin, rayDirection, out hit, rayLength, groundLayer))
+            {
+                // If we hit the track, adjust vertical velocity to stay on surface
+                float surfaceHeight = hit.point.y;
+                float currentHeight = transform.position.y;
+                if (currentHeight > surfaceHeight + 0.1f)
+                {
+                    // Apply downward force to stick to track
+                    velocity.y = Mathf.Min(velocity.y, -0.5f);
+                }
+                // Optionally, adjust track direction based on surface normal
+                // trackDirection = Vector3.ProjectOnPlane(trackDirection, hit.normal).normalized;
+            }
         }
         
         // ActionScript _entityInteraction()
@@ -225,6 +244,17 @@ namespace LuneRun
         {
             // Check for speed entities etc.
             // TODO: Implement entity collision
+            // Basic entity interaction - check for nearby entities
+            if (world != null)
+            {
+                // Example: Get closest entity within radius
+                object closestEntity = world.GetClosestEntity(transform.position, 1.0f);
+                if (closestEntity != null)
+                {
+                    // Handle entity interaction (e.g., speed boost, obstacle)
+                    Debug.Log("Entity interaction detected");
+                }
+            }
         }
         
         // ActionScript _onJump()

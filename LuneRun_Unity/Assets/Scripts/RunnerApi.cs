@@ -33,7 +33,7 @@ namespace LuneRun
             };
             
             // Populate with some dummy scores
-            for (int i = 1; i <= 32; i++)
+            for (int i = 1; i <= Constants.TotalLevels; i++)
             {
                 if (UnityEngine.Random.value > 0.7f)
                 {
@@ -212,7 +212,7 @@ namespace LuneRun
             };
             
             // Populate with some mock scores (unlocked levels)
-            for (int i = 1; i <= 32; i++)
+            for (int i = 1; i <= Constants.TotalLevels; i++)
             {
                 if (UnityEngine.Random.value > 0.5f)
                 {

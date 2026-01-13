@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -20,10 +21,17 @@ namespace LuneRun
         [SerializeField] public Text versionText;
         [SerializeField] public Text logoText;
         
-        // Level buttons (1-32)
+        // Tab buttons
+        [SerializeField] private Button tab1Button;
+        [SerializeField] private Button tab2Button;
+        [SerializeField] private Button tab3Button;
+        [SerializeField] private GameObject levelPanel;
+        
+        // Level buttons (1-32 for tab1, 33-60 for tab2, reused)
         public List<Button> levelButtons = new();
         private int selectedLevel = -1;
         private bool isLastUnlocked = false;
+        private int currentTab = 1; // 1, 2, or 3
         
         // References
         private Settings settings;
@@ -35,6 +43,9 @@ namespace LuneRun
             Debug.Log("[LuneRun] MenuManager.Initialize - Starting menu initialization");
             this.settings = settings;
             this.runnerApi = runnerApi;
+            
+            // Ensure EventSystem exists for UI input
+            EnsureEventSystem();
             
             // Check UI references and log warnings if missing
             CheckUIReferences();
@@ -53,6 +64,9 @@ namespace LuneRun
             
             // Ensure level buttons exist and have listeners
             EnsureLevelButtons();
+            
+            // Setup tab buttons
+            SetupTabButtons();
             
             Debug.Log("[LuneRun] MenuManager.Initialize - Menu initialization completed");
         }
@@ -98,10 +112,16 @@ namespace LuneRun
             if (versionText == null) missingRefs.Add("versionText");
             if (logoText == null) missingRefs.Add("logoText");
             
+            // Tab buttons
+            if (tab1Button == null) missingRefs.Add("tab1Button");
+            if (tab2Button == null) missingRefs.Add("tab2Button");
+            if (tab3Button == null) missingRefs.Add("tab3Button");
+            if (levelPanel == null) missingRefs.Add("levelPanel");
+            
             int levelButtonCount = levelButtons?.Count(btn => btn != null) ?? 0;
-            if (levelButtonCount < 32)
+            if (levelButtonCount < Constants.LevelsPerTab)
             {
-                missingRefs.Add($"levelButtons ({levelButtonCount}/32)");
+                missingRefs.Add($"levelButtons ({levelButtonCount}/{Constants.LevelsPerTab})");
             }
             
             if (missingRefs.Count > 0)
@@ -123,7 +143,7 @@ namespace LuneRun
         {
             Debug.Log("[LuneRun] MenuManager.EnsureLevelButtons - Starting");
             
-            // Ensure we have 32 level buttons
+            // Ensure we have at least 32 level buttons for tab1
             if (levelButtons == null)
             {
                 levelButtons = new List<Button>();
@@ -145,30 +165,18 @@ namespace LuneRun
             }
             Debug.Log($"[LuneRun] MenuManager.EnsureLevelButtons - Found {validButtonCount} valid buttons out of {levelButtons.Count} total");
             
-            // Ensure each button has the correct click listener
-            for (int i = 0; i < levelButtons.Count; i++)
+            // Ensure we have enough buttons for tab1 (32)
+            if (validButtonCount < Constants.LevelsPerTab)
             {
-                int level = i + 1;
-                Button btn = levelButtons[i];
-                if (btn != null)
-                {
-                    // Remove existing listeners and add our own
-                    btn.onClick.RemoveAllListeners();
-                    btn.onClick.AddListener(() => OnLevelButtonClicked(level));
-                    Debug.Log($"[LuneRun] MenuManager.EnsureLevelButtons - Set click listener for Level {level} button");
-                }
-                else if (i < 32) // Only warn for first 32 levels
-                {
-                    Debug.LogWarning($"[LuneRun] MenuManager.EnsureLevelButtons - Level {level} button is null");
-                }
+                Debug.LogWarning($"[LuneRun] MenuManager.EnsureLevelButtons - Only {validButtonCount} level buttons found. Need at least {Constants.LevelsPerTab} for tab1.");
+                Debug.LogWarning("[LuneRun] Please run 'Tools/LuneRun/Setup Scene UI' in the Unity editor to create the menu UI.");
+                // Attempt to create missing buttons dynamically
+                CreateMissingLevelButtons();
             }
             
-            // If we still don't have enough buttons, warn the user
-            if (validButtonCount < 32)
-            {
-                Debug.LogWarning($"[LuneRun] MenuManager.EnsureLevelButtons - Only {validButtonCount} level buttons found. UI may not be properly set up.");
-                Debug.LogWarning("[LuneRun] Please run 'Tools/LuneRun/Setup Scene UI' in the Unity editor to create the menu UI.");
-            }
+            // Initialize tab1 as default
+            currentTab = 1;
+            ReloadLevelButtonsForCurrentTab();
             
             Debug.Log("[LuneRun] MenuManager.EnsureLevelButtons - Completed");
         }
@@ -179,7 +187,7 @@ namespace LuneRun
             levelButtons.Clear();
             
             // Try to find buttons by name pattern "LevelXButton"
-            for (int i = 1; i <= 32; i++)
+            for (int i = 1; i <= Constants.LevelsPerTab; i++)
             {
                 string buttonName = "Level" + i + "Button";
                 GameObject buttonObj = GameObject.Find(buttonName);
@@ -234,24 +242,11 @@ namespace LuneRun
             currentUserData = userData;
             
             // Update level buttons based on unlocked status
-            // Determine if last level is unlocked
-            isLastUnlocked = userData.GetScore(32) != 0f;
+            // Determine if last level (60) is unlocked
+            isLastUnlocked = userData.GetScore(Constants.TotalLevels) != 0f;
             
-            // Update button backgrounds
-            if (levelButtons != null && levelButtons.Count >= 32)
-            {
-                for (int i = 0; i < 32; i++)
-                {
-                    bool unlocked = userData.GetScore(i + 1) != 0f;
-                    Button btn = levelButtons[i];
-                    if (btn != null)
-                    {
-                        // Update button appearance based on unlocked status
-                        // For now, just enable/disable interactable
-                        btn.interactable = unlocked || (runnerApi is LocalRunnerApi);
-                    }
-                }
-            }
+            // Update button states for current tab
+            ReloadLevelButtonsForCurrentTab();
         }
         
         private bool IsLevelUnlocked(int level)
@@ -407,7 +402,7 @@ namespace LuneRun
                     {
                         selectedLevel = level;
                     },
-                    isLastUnlocked: (level == 32 && isLastUnlocked)
+                    isLastUnlocked: (level == Constants.TotalLevels && isLastUnlocked)
                 );
             }
             else
@@ -415,6 +410,275 @@ namespace LuneRun
                 // If not unlocked or HighscoreManager not available, just select level
                 selectedLevel = level;
             }
+        }
+        
+        private void EnsureEventSystem()
+        {
+            if (EventSystem.current == null)
+            {
+                Debug.Log("[LuneRun] MenuManager.EnsureEventSystem - Creating EventSystem");
+                GameObject eventSystemObj = new GameObject("EventSystem");
+                eventSystemObj.AddComponent<EventSystem>();
+                eventSystemObj.AddComponent<StandaloneInputModule>();
+                Debug.Log("[LuneRun] EventSystem created");
+            }
+            else
+            {
+                Debug.Log($"[LuneRun] MenuManager.EnsureEventSystem - EventSystem already exists: {EventSystem.current.gameObject.name}");
+            }
+        }
+        
+        private void SetupTabButtons()
+        {
+            if (tab1Button != null)
+            {
+                tab1Button.onClick.RemoveAllListeners();
+                tab1Button.onClick.AddListener(() => SwitchTab(1));
+                Debug.Log("[LuneRun] Tab1 button listener set");
+            }
+            else
+            {
+                Debug.LogWarning("[LuneRun] Tab1 button reference is null");
+            }
+            
+            if (tab2Button != null)
+            {
+                tab2Button.onClick.RemoveAllListeners();
+                tab2Button.onClick.AddListener(() => SwitchTab(2));
+                Debug.Log("[LuneRun] Tab2 button listener set");
+            }
+            else
+            {
+                Debug.LogWarning("[LuneRun] Tab2 button reference is null");
+            }
+            
+            if (tab3Button != null)
+            {
+                tab3Button.onClick.RemoveAllListeners();
+                tab3Button.onClick.AddListener(() => SwitchTab(3));
+                Debug.Log("[LuneRun] Tab3 button listener set");
+            }
+            else
+            {
+                Debug.LogWarning("[LuneRun] Tab3 button reference is null");
+            }
+            
+            // Apply initial highlighting
+            UpdateTabAppearance();
+        }
+        
+        private void SwitchTab(int tabIndex)
+        {
+            if (currentTab == tabIndex) return;
+            
+            Debug.Log($"[LuneRun] MenuManager.SwitchTab - Switching from tab {currentTab} to tab {tabIndex}");
+            currentTab = tabIndex;
+            
+            // Update button appearances (highlight active tab)
+            UpdateTabAppearance();
+            
+            // Reload level buttons for this tab
+            ReloadLevelButtonsForCurrentTab();
+        }
+        
+        private void UpdateTabAppearance()
+        {
+            Debug.Log($"[LuneRun] MenuManager.UpdateTabAppearance - Active tab: {currentTab}");
+            
+            // Highlight active tab button, dim inactive tabs
+            Color activeColor = new Color(1f, 0.8f, 0f); // Orange-yellow
+            Color inactiveColor = new Color(0.5f, 0.5f, 0.5f, 0.8f); // Semi-transparent gray
+            
+            if (tab1Button != null)
+            {
+                Image img = tab1Button.GetComponent<Image>();
+                if (img != null) img.color = (currentTab == 1) ? activeColor : inactiveColor;
+                
+                Text btnText = tab1Button.GetComponentInChildren<Text>();
+                if (btnText != null) btnText.color = (currentTab == 1) ? Color.white : new Color(0.7f, 0.7f, 0.7f);
+            }
+            
+            if (tab2Button != null)
+            {
+                Image img = tab2Button.GetComponent<Image>();
+                if (img != null) img.color = (currentTab == 2) ? activeColor : inactiveColor;
+                
+                Text btnText = tab2Button.GetComponentInChildren<Text>();
+                if (btnText != null) btnText.color = (currentTab == 2) ? Color.white : new Color(0.7f, 0.7f, 0.7f);
+            }
+            
+            if (tab3Button != null)
+            {
+                Image img = tab3Button.GetComponent<Image>();
+                if (img != null) img.color = (currentTab == 3) ? activeColor : inactiveColor;
+                
+                Text btnText = tab3Button.GetComponentInChildren<Text>();
+                if (btnText != null) btnText.color = (currentTab == 3) ? Color.white : new Color(0.7f, 0.7f, 0.7f);
+            }
+        }
+        
+        private void ReloadLevelButtonsForCurrentTab()
+        {
+            if (levelButtons == null || levelButtons.Count == 0) return;
+            
+            if (currentTab == 3)
+            {
+                // Infinite mode tab
+                Debug.Log("[LuneRun] MenuManager.ReloadLevelButtonsForCurrentTab - Tab 3 (Infinite mode)");
+                
+                for (int i = 0; i < levelButtons.Count; i++)
+                {
+                    Button btn = levelButtons[i];
+                    if (btn != null)
+                    {
+                        if (i == 0)
+                        {
+                            // First button is Infinite mode
+                            btn.gameObject.SetActive(true);
+                            Text btnText = btn.GetComponentInChildren<Text>();
+                            if (btnText != null)
+                            {
+                                btnText.text = "Infinite";
+                            }
+                            
+                            btn.onClick.RemoveAllListeners();
+                            btn.onClick.AddListener(() => OnLevelButtonClicked(Constants.Tab3InfiniteLevelId));
+                            btn.interactable = true; // Infinite mode always accessible
+                        }
+                        else
+                        {
+                            // Hide other buttons
+                            btn.gameObject.SetActive(false);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Normal level tabs (1 and 2)
+                int startLevel = (currentTab - 1) * Constants.LevelsPerTab + 1;
+                int endLevel = Mathf.Min(startLevel + Constants.LevelsPerTab - 1, Constants.TotalLevels); // Cap at 60
+                
+                Debug.Log($"[LuneRun] MenuManager.ReloadLevelButtonsForCurrentTab - Tab {currentTab}: levels {startLevel} to {endLevel}");
+                
+                // Update button labels and bindings
+                for (int i = 0; i < levelButtons.Count; i++)
+                {
+                    Button btn = levelButtons[i];
+                    if (btn != null)
+                    {
+                        int level = startLevel + i;
+                        if (level <= endLevel)
+                        {
+                            // Update button text
+                            Text btnText = btn.GetComponentInChildren<Text>();
+                            if (btnText != null)
+                            {
+                                btnText.text = "Level " + level;
+                            }
+                            
+                            // Update click listener
+                            btn.onClick.RemoveAllListeners();
+                            int capturedLevel = level; // Capture for closure
+                            btn.onClick.AddListener(() => OnLevelButtonClicked(capturedLevel));
+                            
+                            // Update interactable state based on unlocked status
+                            bool unlocked = IsLevelUnlocked(level) || (runnerApi is LocalRunnerApi);
+                            btn.interactable = unlocked;
+                        }
+                        else
+                        {
+                            // Hide or disable extra buttons
+                            btn.gameObject.SetActive(false);
+                        }
+                    }
+                }
+            }
+        }
+        
+        private void CreateMissingLevelButtons()
+        {
+            Debug.Log("[LuneRun] MenuManager.CreateMissingLevelButtons - Creating missing level buttons dynamically");
+            
+            // Find or create LevelPanel
+            GameObject levelPanel = GameObject.Find("LevelPanel");
+            if (levelPanel == null)
+            {
+                // Find Canvas
+                Canvas canvas = FindObjectOfType<Canvas>();
+                if (canvas == null)
+                {
+                    Debug.LogError("[LuneRun] No Canvas found in scene. Cannot create level buttons.");
+                    return;
+                }
+                
+                // Create LevelPanel
+                levelPanel = new GameObject("LevelPanel", typeof(RectTransform));
+                levelPanel.transform.SetParent(canvas.transform, false);
+                RectTransform panelRT = levelPanel.GetComponent<RectTransform>();
+                panelRT.anchorMin = new Vector2(0.5f, 0.5f);
+                panelRT.anchorMax = new Vector2(0.5f, 0.5f);
+                panelRT.pivot = new Vector2(0.5f, 0.5f);
+                panelRT.sizeDelta = new Vector2(600, 400);
+                panelRT.anchoredPosition = Vector2.zero;
+                Debug.Log("[LuneRun] Created LevelPanel");
+            }
+            
+            // Create button template
+            GameObject buttonTemplate = new GameObject("ButtonTemplate", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
+            buttonTemplate.SetActive(false);
+            buttonTemplate.transform.SetParent(levelPanel.transform, false);
+            
+            // Set up button appearance
+            Image templateImg = buttonTemplate.GetComponent<Image>();
+            templateImg.color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
+            templateImg.sprite = null;
+            
+            // Add text child
+            GameObject textObj = new GameObject("Text", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+            textObj.transform.SetParent(buttonTemplate.transform, false);
+            Text textComp = textObj.GetComponent<Text>();
+            textComp.text = "Level";
+            textComp.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            textComp.fontSize = 20;
+            textComp.color = Color.white;
+            textComp.alignment = TextAnchor.MiddleCenter;
+            
+            RectTransform textRT = textObj.GetComponent<RectTransform>();
+            textRT.anchorMin = Vector2.zero;
+            textRT.anchorMax = Vector2.one;
+            textRT.offsetMin = Vector2.zero;
+            textRT.offsetMax = Vector2.zero;
+            
+            // Create 32 buttons in a grid (for tab1)
+            int buttonsToCreate = Constants.LevelsPerTab - levelButtons.Count(btn => btn != null);
+            for (int i = 0; i < buttonsToCreate; i++)
+            {
+                GameObject btnObj = Instantiate(buttonTemplate);
+                btnObj.name = "Level" + (i + 1) + "Button";
+                btnObj.SetActive(true);
+                btnObj.transform.SetParent(levelPanel.transform, false);
+                
+                // Position in grid (8 columns x 4 rows)
+                int col = i % 8;
+                int row = i / 8;
+                float x = (col - 3.5f) * 70f;
+                float y = (1.5f - row) * 70f;
+                
+                RectTransform rt = btnObj.GetComponent<RectTransform>();
+                rt.anchorMin = new Vector2(0.5f, 0.5f);
+                rt.anchorMax = new Vector2(0.5f, 0.5f);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.sizeDelta = new Vector2(60f, 60f);
+                rt.anchoredPosition = new Vector2(x, y);
+                
+                Button btn = btnObj.GetComponent<Button>();
+                levelButtons.Add(btn);
+                Debug.Log($"[LuneRun] Created button: {btnObj.name}");
+            }
+            
+            Destroy(buttonTemplate);
+            Debug.Log($"[LuneRun] Created {buttonsToCreate} level buttons");
         }
     }
 }

@@ -245,7 +245,15 @@ namespace LuneRun
                     // Transition to game or prelude
                     MenuManager.DestroyMenu(menuManager);
                     menuManager = null;
-                    currentState = selectedLevel != 1 ? GameState.Game : GameState.Prelude;
+                    // Show prelude for level 1 or if user hasn't seen tutorial
+                    if (selectedLevel == 1 || (settings != null && !settings.HasSeenTutorial()))
+                    {
+                        currentState = GameState.Prelude;
+                    }
+                    else
+                    {
+                        currentState = GameState.Game;
+                    }
                     showPostlude = false;
                     Initialize3DView();
                 }
@@ -303,6 +311,13 @@ namespace LuneRun
             // Wait for key press to start game
             if (Input.anyKeyDown)
             {
+                // Mark tutorial as seen if this is first time
+                if (settings != null && !settings.HasSeenTutorial())
+                {
+                    settings.SetSeenTutorial();
+                    Debug.Log("Tutorial marked as seen");
+                }
+                
                 DestroyPreludeUI();
                 currentState = GameState.Game;
                 EnterGame();
@@ -340,11 +355,44 @@ namespace LuneRun
             Image panelImg = preludePanel.GetComponent<Image>();
             panelImg.color = new Color(0f, 0f, 0f, 0.9f);
             
+            // Determine text based on context
+            string titleTextStr = "LEVEL " + selectedLevel;
+            string storyTextStr;
+            
+            if (selectedLevel == 1)
+            {
+                // Level 1 story introduction
+                storyTextStr = "Welcome to Lunerun!\n\n" +
+                               "You are an astronaut running on the moon.\n" +
+                               "Hold SPACE to run, release to jump.\n" +
+                               "Avoid obstacles and reach the goal!\n\n" +
+                               "Press any key to begin.";
+            }
+            else if (settings != null && !settings.HasSeenTutorial())
+            {
+                // First time playing, tutorial introduction
+                titleTextStr = "TUTORIAL";
+                storyTextStr = "Welcome to Lunerun!\n\n" +
+                               "This is your first time playing.\n" +
+                               "Hold SPACE to run, release to jump.\n" +
+                               "Avoid obstacles and reach the goal!\n\n" +
+                               "After this level, you can access all unlocked levels.\n\n" +
+                               "Press any key to begin.";
+            }
+            else
+            {
+                // Normal level prelude
+                storyTextStr = $"Level {selectedLevel}\n\n" +
+                               "Hold SPACE to run, release to jump.\n" +
+                               "Avoid obstacles and reach the goal!\n\n" +
+                               "Press any key to begin.";
+            }
+            
             // Create title text
             GameObject titleObj = new GameObject("PreludeTitle", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
             titleObj.transform.SetParent(preludePanel.transform, false);
             Text titleText = titleObj.GetComponent<Text>();
-            titleText.text = "LEVEL 1";
+            titleText.text = titleTextStr;
             titleText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
             titleText.fontSize = 72;
             titleText.color = Color.yellow;
@@ -362,11 +410,7 @@ namespace LuneRun
             GameObject storyObj = new GameObject("StoryText", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
             storyObj.transform.SetParent(preludePanel.transform, false);
             Text storyText = storyObj.GetComponent<Text>();
-            storyText.text = "Welcome to Lunerun!\n\n" +
-                            "You are an astronaut running on the moon.\n" +
-                            "Hold SPACE to run, release to jump.\n" +
-                            "Avoid obstacles and reach the goal!\n\n" +
-                            "Press any key to begin.";
+            storyText.text = storyTextStr;
             storyText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
             storyText.fontSize = 28;
             storyText.color = Color.white;
@@ -465,7 +509,15 @@ namespace LuneRun
         public void StartGame(int levelId)
         {
             selectedLevel = levelId;
-            currentState = levelId != 1 ? GameState.Game : GameState.Prelude;
+            // Show prelude for level 1 or if user hasn't seen tutorial
+            if (selectedLevel == 1 || (settings != null && !settings.HasSeenTutorial()))
+            {
+                currentState = GameState.Prelude;
+            }
+            else
+            {
+                currentState = GameState.Game;
+            }
             showPostlude = false;
             Initialize3DView();
         }

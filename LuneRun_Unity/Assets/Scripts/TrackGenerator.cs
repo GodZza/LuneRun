@@ -51,8 +51,16 @@ namespace LuneRun
             // Seed random based on level
             Random.InitState(levelId);
             
+            // Determine number of segments: for infinite mode, generate longer track
+            int numSegments = segmentsPerLevel;
+            if (levelId == Constants.Tab3InfiniteLevelId)
+            {
+                numSegments = 200; // Much longer track for infinite mode
+                Debug.Log("[LuneRun] Generating infinite mode track with " + numSegments + " segments");
+            }
+            
             // Generate segments
-            for (int i = 0; i < segmentsPerLevel; i++)
+            for (int i = 0; i < numSegments; i++)
             {
                 // Determine slope for this segment
                 float slopeAngle = Random.Range(-maxSlopeAngle, maxSlopeAngle);
