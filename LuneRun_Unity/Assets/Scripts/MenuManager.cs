@@ -144,9 +144,23 @@ namespace LuneRun
         public static void DestroyMenu(MenuManager menu)
         {
             // Clean up
-            if (menu != null && menu.gameObject != null)
+            if (menu != null)
             {
-                Destroy(menu.gameObject);
+                // Destroy UI panels
+                if (menu.mainMenuPanel != null)
+                {
+                    Destroy(menu.mainMenuPanel);
+                }
+                if (menu.helpPanel != null)
+                {
+                    Destroy(menu.helpPanel);
+                }
+                
+                // Destroy the menu manager GameObject
+                if (menu.gameObject != null)
+                {
+                    Destroy(menu.gameObject);
+                }
             }
         }
         

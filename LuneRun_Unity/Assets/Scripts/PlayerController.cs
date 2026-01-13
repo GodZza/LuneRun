@@ -19,6 +19,7 @@ namespace LuneRun
         
         // Input state
         private bool inputSpace;
+        private float horizontalSpeed = 0f;
         
         public void Initialize(Settings settings)
         {
@@ -29,14 +30,24 @@ namespace LuneRun
                 characterController = gameObject.AddComponent<CharacterController>();
                 characterController.height = 2f;
                 characterController.radius = 0.5f;
+                characterController.stepOffset = 0.3f;
+                characterController.slopeLimit = 45f;
+            }
+            else
+            {
+                characterController.stepOffset = 0.3f;
+                characterController.slopeLimit = 45f;
             }
             
             // Set ground layer to include all layers
             groundLayer = -1;
             
             // Reset position slightly above track surface
-            transform.position = new Vector3(0, 0.5f, 0);
+            transform.position = new Vector3(0, 0.3f, 0);
             velocity = Vector3.zero;
+            horizontalSpeed = 0f;
+            
+            Debug.Log("PlayerController initialized at position: " + transform.position);
         }
         
         public void UpdatePlayer()
@@ -57,28 +68,30 @@ namespace LuneRun
             else
             {
                 velocity.y = -2f; // Small downward force to keep grounded
+                isJumping = false; // Landed
             }
             
-            // Handle running/jumping based on space key
-            // In the original game: hold SPACE to run, release to jump
-            // Press SPACE while in air to land quicker
-            
+            // Handle horizontal speed based on ground state and input
             if (isGrounded)
             {
                 if (inputSpace)
                 {
                     // Hold SPACE to run forward
-                    velocity.z = runSpeed;
+                    horizontalSpeed = runSpeed;
                 }
                 else
                 {
-                    // Release SPACE to jump
+                    // Not holding space - stop running
+                    horizontalSpeed = 0f;
+                    
+                    // Release SPACE to jump (only if previously holding)
                     if (spaceReleased)
                     {
                         velocity.y = jumpForce;
                         isJumping = true;
+                        // Keep horizontal speed from before jump (runSpeed if was running)
+                        horizontalSpeed = runSpeed;
                     }
-                    velocity.z = 0f;
                 }
             }
             else
@@ -90,9 +103,16 @@ namespace LuneRun
                     velocity.y -= gravity * 2f * Time.deltaTime;
                 }
                 
-                // Air control
-                velocity.z = inputSpace ? runSpeed * 0.5f : 0f;
+                // Air control: if holding space, allow some horizontal control
+                if (inputSpace)
+                {
+                    horizontalSpeed = runSpeed * 0.5f;
+                }
+                // If not holding space, keep current horizontal speed (no change)
             }
+            
+            // Apply horizontal speed
+            velocity.z = horizontalSpeed;
             
             // Move character
             characterController.Move(velocity * Time.deltaTime);
@@ -103,6 +123,9 @@ namespace LuneRun
                 Quaternion targetRotation = Quaternion.LookRotation(new Vector3(0, 0, velocity.z));
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
             }
+            
+            // Debug logging (uncomment for testing)
+            // Debug.Log($"Player: grounded={isGrounded}, inputSpace={inputSpace}, hSpeed={horizontalSpeed}, velocity={velocity}");
         }
         
         public void Interpolate(float alpha)
@@ -115,8 +138,10 @@ namespace LuneRun
         public void Reset()
         {
             velocity = Vector3.zero;
-            transform.position = new Vector3(0, 0.5f, 0);
+            transform.position = new Vector3(0, 0.3f, 0);
             isJumping = false;
+            horizontalSpeed = 0f;
+            Debug.Log("PlayerController reset at position: " + transform.position);
         }
         
         public bool IsOnGround()
@@ -129,7 +154,7 @@ namespace LuneRun
         {
             if (isGrounded && inputSpace)
             {
-                velocity.z = runSpeed * 1.5f;
+                horizontalSpeed = runSpeed * 1.5f;
             }
         }
         

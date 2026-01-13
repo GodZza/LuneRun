@@ -191,6 +191,13 @@ namespace LuneRun
 
         private void EnterMenu()
         {
+            // Ensure UI canvas is visible for menu
+            if (uiCanvas != null)
+            {
+                uiCanvas.enabled = true;
+                Debug.Log("UI canvas enabled for menu");
+            }
+            
             // Create menu manager if not exists
             if (menuManager == null)
             {
@@ -373,6 +380,13 @@ namespace LuneRun
 
         private void EnterGame()
         {
+            // Hide UI canvas during gameplay
+            if (uiCanvas != null)
+            {
+                uiCanvas.enabled = false;
+                Debug.Log("UI canvas hidden for gameplay");
+            }
+            
             if (levelManager == null)
             {
                 GameObject levelObj = new GameObject("LevelManager");
