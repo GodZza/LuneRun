@@ -4,9 +4,8 @@ namespace LuneRun
 {
     public class PlayerController : MonoBehaviour
     {
-        [SerializeField] private float runSpeed = 10f;
-        [SerializeField] private float jumpForce = 15f;
-        [SerializeField] private float gravity = 30f;
+        [SerializeField] private float maxSpeed = 3.8f;
+        [SerializeField] private float gravity = 3.5f;
         [SerializeField] private float groundCheckDistance = 0.2f;
         [SerializeField] private LayerMask groundLayer;
         
@@ -19,7 +18,10 @@ namespace LuneRun
         
         // Input state
         private bool inputSpace;
-        private float horizontalSpeed = 0f;
+        private bool spaceDown;
+        private bool spaceReleasedFlag;
+        private float currentSpeed = 0f;
+        private Vector3 trackDirection = Vector3.forward;
         
         public void Initialize(Settings settings)
         {
@@ -45,87 +47,89 @@ namespace LuneRun
             // Reset position slightly above track surface
             transform.position = new Vector3(0, 0.3f, 0);
             velocity = Vector3.zero;
-            horizontalSpeed = 0f;
+            currentSpeed = 0f;
+            trackDirection = Vector3.forward;
             
             Debug.Log("PlayerController initialized at position: " + transform.position);
         }
         
         public void UpdatePlayer()
         {
-            // Gather input
-            inputSpace = Input.GetKey(KeyCode.Space);
+            // Gather input - track both down and released states
+            bool prevSpaceDown = spaceDown;
+            spaceDown = Input.GetKey(KeyCode.Space);
             spacePressed = Input.GetKeyDown(KeyCode.Space);
-            spaceReleased = Input.GetKeyUp(KeyCode.Space);
+            spaceReleasedFlag = Input.GetKeyUp(KeyCode.Space);
+            inputSpace = spaceDown;
             
             // Ground check
             isGrounded = characterController.isGrounded;
             
-            // Apply gravity
-            if (!isGrounded)
-            {
-                velocity.y -= gravity * Time.deltaTime;
-            }
-            else
-            {
-                velocity.y = -2f; // Small downward force to keep grounded
-                isJumping = false; // Landed
-            }
+            // Apply gravity (always, but adjust based on ground state)
+            velocity.y -= gravity * Time.deltaTime;
             
-            // Handle horizontal speed based on ground state and input
+            // If grounded, reset vertical velocity to small downward force
             if (isGrounded)
             {
-                if (inputSpace)
+                velocity.y = Mathf.Max(velocity.y, -2f);
+                isJumping = false;
+            }
+            
+            // Calculate speed along track direction
+            currentSpeed = Vector3.Dot(velocity, trackDirection);
+            
+            // Handle wanted speeds based on input and ground state
+            if (isGrounded)
+            {
+                if (spaceDown)
                 {
-                    // Hold SPACE to run forward
-                    horizontalSpeed = runSpeed;
-                }
-                else
-                {
-                    // Not holding space - stop running
-                    horizontalSpeed = 0f;
-                    
-                    // Release SPACE to jump (only if previously holding)
-                    if (spaceReleased)
+                    // Hold SPACE to run forward - accelerate toward max speed
+                    if (currentSpeed < maxSpeed)
                     {
-                        velocity.y = jumpForce;
-                        isJumping = true;
-                        // Keep horizontal speed from before jump (runSpeed if was running)
-                        horizontalSpeed = runSpeed;
+                        velocity += trackDirection * 0.1f;
+                    }
+                    
+                    // Slope effect: -0.1 * trackDirection.y
+                    float slopeEffect = -0.1f * trackDirection.y;
+                    if (currentSpeed < maxSpeed * 1.4f)
+                    {
+                        velocity += trackDirection * slopeEffect;
                     }
                 }
+                else if (spaceReleasedFlag && prevSpaceDown)
+                {
+                    // Release SPACE to jump - vertical impulse based on current speed
+                    float jumpImpulse = Mathf.Min(4f, 1f + currentSpeed);
+                    velocity.y += jumpImpulse;
+                    isJumping = true;
+                }
+                
+                // Update current speed after velocity changes
+                currentSpeed = Vector3.Dot(velocity, trackDirection);
             }
             else
             {
                 // In air
                 if (spacePressed)
                 {
-                    // Press SPACE while in air to land quicker (increase gravity)
-                    velocity.y -= gravity * 2f * Time.deltaTime;
+                    // Press SPACE while in air to land quicker (increase downward velocity)
+                    velocity.y = Mathf.Min(0f, velocity.y);
+                    velocity.y -= 2f * gravity * Time.deltaTime;
                 }
-                
-                // Air control: if holding space, allow some horizontal control
-                if (inputSpace)
-                {
-                    horizontalSpeed = runSpeed * 0.5f;
-                }
-                // If not holding space, keep current horizontal speed (no change)
             }
-            
-            // Apply horizontal speed
-            velocity.z = horizontalSpeed;
             
             // Move character
             characterController.Move(velocity * Time.deltaTime);
             
-            // Rotate player to face movement direction
-            if (velocity.z != 0)
+            // Rotate player to face track direction (if moving forward)
+            if (currentSpeed > 0.1f)
             {
-                Quaternion targetRotation = Quaternion.LookRotation(new Vector3(0, 0, velocity.z));
+                Quaternion targetRotation = Quaternion.LookRotation(trackDirection);
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
             }
             
             // Debug logging (uncomment for testing)
-            // Debug.Log($"Player: grounded={isGrounded}, inputSpace={inputSpace}, hSpeed={horizontalSpeed}, velocity={velocity}");
+            // Debug.Log($"Player: grounded={isGrounded}, spaceDown={spaceDown}, released={spaceReleasedFlag}, speed={currentSpeed}, velocity={velocity}");
         }
         
         public void Interpolate(float alpha)
@@ -140,7 +144,8 @@ namespace LuneRun
             velocity = Vector3.zero;
             transform.position = new Vector3(0, 0.3f, 0);
             isJumping = false;
-            horizontalSpeed = 0f;
+            currentSpeed = 0f;
+            trackDirection = Vector3.forward;
             Debug.Log("PlayerController reset at position: " + transform.position);
         }
         
@@ -149,12 +154,19 @@ namespace LuneRun
             return isGrounded;
         }
         
-        // Call this when player lands on a slope to gain speed
+        // Set the direction of the current track segment
+        public void SetTrackDirection(Vector3 direction)
+        {
+            trackDirection = direction.normalized;
+        }
+        
+        // Call this when player lands on a slope to gain speed (simplified version)
         public void SlopeBoost()
         {
-            if (isGrounded && inputSpace)
+            if (isGrounded && spaceDown)
             {
-                horizontalSpeed = runSpeed * 1.5f;
+                // Increase speed by 20% (similar to original's 1.2x scaling)
+                velocity *= 1.2f;
             }
         }
         

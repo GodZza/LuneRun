@@ -197,6 +197,21 @@ namespace LuneRun
                 uiCanvas.enabled = true;
                 Debug.Log("UI canvas enabled for menu");
             }
+            else
+            {
+                // Try to find canvas in scene
+                Canvas foundCanvas = FindObjectOfType<Canvas>();
+                if (foundCanvas != null)
+                {
+                    uiCanvas = foundCanvas;
+                    uiCanvas.enabled = true;
+                    Debug.Log("Found and enabled UI canvas: " + uiCanvas.name);
+                }
+                else
+                {
+                    Debug.LogWarning("No UI canvas found to enable");
+                }
+            }
             
             // Create menu manager if not exists
             if (menuManager == null)
@@ -385,6 +400,21 @@ namespace LuneRun
             {
                 uiCanvas.enabled = false;
                 Debug.Log("UI canvas hidden for gameplay");
+            }
+            else
+            {
+                // Try to find canvas in scene
+                Canvas foundCanvas = FindObjectOfType<Canvas>();
+                if (foundCanvas != null)
+                {
+                    uiCanvas = foundCanvas;
+                    uiCanvas.enabled = false;
+                    Debug.Log("Found and hidden UI canvas: " + uiCanvas.name);
+                }
+                else
+                {
+                    Debug.LogWarning("No UI canvas found to hide");
+                }
             }
             
             if (levelManager == null)

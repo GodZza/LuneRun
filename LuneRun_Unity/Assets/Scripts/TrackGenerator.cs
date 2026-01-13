@@ -144,6 +144,17 @@ namespace LuneRun
             return 0f;
         }
         
+        // Get direction at given distance along track
+        public Vector3 GetDirectionAtDistance(float distance)
+        {
+            TrackSegment segment = GetSegmentAtDistance(distance);
+            if (segment == null) return Vector3.forward;
+            
+            // Direction is from start to end, normalized
+            Vector3 dir = (segment.endPoint - segment.startPoint).normalized;
+            return dir;
+        }
+        
         // Get total track length
         public float GetTotalLength()
         {

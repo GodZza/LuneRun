@@ -60,6 +60,14 @@ namespace LuneRun
         {
             if (playerController != null)
             {
+                // Update track direction based on player's current position
+                if (trackGenerator != null)
+                {
+                    float distanceAlongTrack = playerController.transform.position.z;
+                    Vector3 trackDir = trackGenerator.GetDirectionAtDistance(distanceAlongTrack);
+                    playerController.SetTrackDirection(trackDir);
+                }
+                
                 playerController.UpdatePlayer();
                 
                 // Update player distance along track (simplified using Z coordinate)
