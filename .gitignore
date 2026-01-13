@@ -1,0 +1,7 @@
+/LuneRun_Unity/*.vsconfig
+/LuneRun_Unity/Temp
+/LuneRun_Unity/Library
+/LuneRun_Unity/Logs
+/LuneRun_Unity/*.csproj
+/LuneRun_Unity/obj
+/LuneRun_Unity/.vs
