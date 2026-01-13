@@ -118,7 +118,7 @@ namespace LuneRun
             titleObj.transform.SetParent(loginPanel.transform, false);
             Text titleText = titleObj.GetComponent<Text>();
             titleText.text = Constants.Name;
-            titleText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            titleText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
             titleText.fontSize = 96;
             titleText.color = new Color(1f, 0.8f, 0f); // Orange-yellow
             titleText.fontStyle = FontStyle.Bold;
@@ -136,7 +136,7 @@ namespace LuneRun
             versionObj.transform.SetParent(loginPanel.transform, false);
             Text versionText = versionObj.GetComponent<Text>();
             versionText.text = Constants.Version;
-            versionText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            versionText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
             versionText.fontSize = 24;
             versionText.color = new Color(0.7f, 0.7f, 0.7f);
             versionText.alignment = TextAnchor.MiddleCenter;
@@ -153,7 +153,7 @@ namespace LuneRun
             instructionObj.transform.SetParent(loginPanel.transform, false);
             Text instructionText = instructionObj.GetComponent<Text>();
             instructionText.text = "Press any key to start";
-            instructionText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            instructionText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
             instructionText.fontSize = 32;
             instructionText.color = Color.white;
             instructionText.alignment = TextAnchor.MiddleCenter;
@@ -237,7 +237,36 @@ namespace LuneRun
             {
                 mainCamera = Camera.main;
             }
-            // TODO: Set up render settings
+            
+            // Set up render settings for moon environment
+            if (mainCamera != null)
+            {
+                // Clear to black (space background)
+                mainCamera.clearFlags = CameraClearFlags.SolidColor;
+                mainCamera.backgroundColor = Color.black;
+                
+                // Set camera far clip plane for distant objects
+                mainCamera.farClipPlane = 1000f;
+                
+                // Enable HDR for better lighting
+                mainCamera.allowHDR = true;
+            }
+            
+            // Adjust lighting for moon environment
+            Light mainLight = GameObject.FindObjectOfType<Light>();
+            if (mainLight != null && mainLight.type == LightType.Directional)
+            {
+                // Moon has harsh directional lighting from the sun
+                mainLight.intensity = 1.2f;
+                mainLight.color = new Color(1f, 0.95f, 0.9f); // Slightly yellowish
+                mainLight.shadows = LightShadows.Soft;
+            }
+            
+            // Set quality settings for smooth gameplay
+            QualitySettings.vSyncCount = 0; // Disable VSync for maximum FPS
+            QualitySettings.antiAliasing = 2; // 2x MSAA for performance/quality balance
+            QualitySettings.shadows = ShadowQuality.All; // Enable shadows
+            
             initialize3D = true;
         }
 
@@ -294,7 +323,7 @@ namespace LuneRun
             titleObj.transform.SetParent(preludePanel.transform, false);
             Text titleText = titleObj.GetComponent<Text>();
             titleText.text = "LEVEL 1";
-            titleText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            titleText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
             titleText.fontSize = 72;
             titleText.color = Color.yellow;
             titleText.fontStyle = FontStyle.Bold;
@@ -316,7 +345,7 @@ namespace LuneRun
                             "Hold SPACE to run, release to jump.\n" +
                             "Avoid obstacles and reach the goal!\n\n" +
                             "Press any key to begin.";
-            storyText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            storyText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
             storyText.fontSize = 28;
             storyText.color = Color.white;
             storyText.alignment = TextAnchor.MiddleCenter;

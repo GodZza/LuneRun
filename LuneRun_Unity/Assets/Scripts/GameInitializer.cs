@@ -29,9 +29,19 @@ namespace LuneRun
             Settings settings = Settings.Load();
             
             // Initialize runner API
-            IRunnerApi runnerApi = useLocalRunnerApi ? 
-                new LocalRunnerApi() : 
-                new RunnerApi(Constants.RunnerApiUrl, null); // TODO: Pass actual user
+            IRunnerApi runnerApi;
+            if (useLocalRunnerApi)
+            {
+                runnerApi = new LocalRunnerApi();
+            }
+            else
+            {
+                // Create a mock user for demonstration
+                int userId = PlayerPrefs.GetInt("PlayerId", 1);
+                string userName = PlayerPrefs.GetString("PlayerName", "Player" + userId);
+                ApiUser mockUser = new ApiUser(userId, userName);
+                runnerApi = new RunnerApi(Constants.RunnerApiUrl, mockUser);
+            }
             
             // Start game flow
             if (skipLogin || Constants.SkipToGame)
@@ -93,8 +103,21 @@ namespace LuneRun
             // Clean up and restart
             if (gameManager != null)
             {
-                // TODO: Implement proper restart
-                UnityEngine.SceneManagement.SceneManager.LoadScene(0);
+                // Destroy all manager objects
+                Destroy(gameManager.gameObject);
+                if (audioManager != null) Destroy(audioManager.gameObject);
+                if (highscoreManager != null) Destroy(highscoreManager.gameObject);
+                
+                // Clear references
+                gameManager = null;
+                audioManager = null;
+                highscoreManager = null;
+                
+                // Reinitialize core systems
+                InitializeCoreSystems();
+                
+                // Start from main menu
+                gameManager.GoToMainMenu();
             }
         }
         

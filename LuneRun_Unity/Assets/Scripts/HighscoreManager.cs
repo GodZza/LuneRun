@@ -147,7 +147,7 @@ namespace LuneRun
             titleObj.transform.SetParent(panel.transform, false);
             Text titleTextComp = titleObj.GetComponent<Text>();
             titleTextComp.text = "HIGHSCORES";
-            titleTextComp.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            // titleTextComp.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
             titleTextComp.fontSize = 48;
             titleTextComp.color = Color.yellow;
             titleTextComp.alignment = TextAnchor.UpperCenter;
@@ -196,7 +196,7 @@ namespace LuneRun
             closeTextObj.transform.SetParent(closeBtnObj.transform, false);
             Text closeText = closeTextObj.GetComponent<Text>();
             closeText.text = "CLOSE";
-            closeText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            closeText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
             closeText.fontSize = 24;
             closeText.color = Color.white;
             closeText.alignment = TextAnchor.MiddleCenter;
@@ -230,7 +230,7 @@ namespace LuneRun
             
             Text rankText = rankObj.GetComponent<Text>();
             rankText.text = "1";
-            rankText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            rankText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
             rankText.fontSize = 20;
             rankText.color = Color.white;
             rankText.alignment = TextAnchor.MiddleCenter;
@@ -246,7 +246,7 @@ namespace LuneRun
             
             Text nameText = nameObj.GetComponent<Text>();
             nameText.text = "Player";
-            nameText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            nameText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
             nameText.fontSize = 20;
             nameText.color = Color.white;
             nameText.alignment = TextAnchor.MiddleLeft;
@@ -262,7 +262,7 @@ namespace LuneRun
             
             Text scoreText = scoreObj.GetComponent<Text>();
             scoreText.text = "00:00.00";
-            scoreText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            scoreText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
             scoreText.fontSize = 20;
             scoreText.color = Color.white;
             scoreText.alignment = TextAnchor.MiddleRight;
@@ -435,7 +435,7 @@ namespace LuneRun
     // Extended IRunnerApi interface for highscore operations
     public interface IRunnerApiExtended : IRunnerApi
     {
-        void GetHighscore(int levelId, Action<List<HighscoreEntry>> callback);
-        void SubmitScore(int levelId, float score, Action<bool> callback);
+        new void GetHighscore(int levelId, Action<List<HighscoreEntry>> callback);
+        new void SubmitScore(int levelId, float score, Action<bool> callback);
     }
 }

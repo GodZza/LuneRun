@@ -73,10 +73,11 @@ namespace LuneRun
         
         private void Start()
         {
-            // Load settings
-            // TODO: Load from player prefs or settings file
-            soundEnabled = true;
-            musicEnabled = true;
+            // Load settings from player prefs
+            soundEnabled = PlayerPrefs.GetInt("SoundEnabled", 1) == 1;
+            musicEnabled = PlayerPrefs.GetInt("MusicEnabled", 1) == 1;
+            soundVolume = PlayerPrefs.GetFloat("SoundVolume", 1f);
+            musicVolume = PlayerPrefs.GetFloat("MusicVolume", 1f);
             UpdateVolumes();
         }
         
@@ -96,15 +97,18 @@ namespace LuneRun
             
             SoundClip clip = musicDict[musicName];
             musicSource.clip = clip.clip;
-            musicSource.volume = clip.volume * musicVolume;
             musicSource.loop = clip.loop;
             
             if (fadeTime > 0)
             {
-                // TODO: Implement fade-in
+                // Implement fade-in
+                StartCoroutine(FadeIn(fadeTime, clip.volume * musicVolume));
             }
-            
-            musicSource.Play();
+            else
+            {
+                musicSource.volume = clip.volume * musicVolume;
+                musicSource.Play();
+            }
         }
         
         // Stop music
@@ -112,12 +116,45 @@ namespace LuneRun
         {
             if (fadeTime > 0)
             {
-                // TODO: Implement fade-out
+                // Implement fade-out
+                StartCoroutine(FadeOut(fadeTime));
             }
             else
             {
                 musicSource.Stop();
             }
+        }
+        
+        private System.Collections.IEnumerator FadeIn(float duration, float targetVolume)
+        {
+            musicSource.volume = 0f;
+            musicSource.Play();
+            
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                musicSource.volume = Mathf.Lerp(0f, targetVolume, elapsed / duration);
+                yield return null;
+            }
+            
+            musicSource.volume = targetVolume;
+        }
+        
+        private System.Collections.IEnumerator FadeOut(float duration)
+        {
+            float startVolume = musicSource.volume;
+            float elapsed = 0f;
+            
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                musicSource.volume = Mathf.Lerp(startVolume, 0f, elapsed / duration);
+                yield return null;
+            }
+            
+            musicSource.Stop();
+            musicSource.volume = startVolume; // Restore original volume for next play
         }
         
         // Set sound volume (0-1)
@@ -138,6 +175,8 @@ namespace LuneRun
         public void ToggleSound()
         {
             soundEnabled = !soundEnabled;
+            PlayerPrefs.SetInt("SoundEnabled", soundEnabled ? 1 : 0);
+            PlayerPrefs.Save();
             UpdateVolumes();
         }
         
@@ -145,7 +184,17 @@ namespace LuneRun
         public void ToggleMusic()
         {
             musicEnabled = !musicEnabled;
+            PlayerPrefs.SetInt("MusicEnabled", musicEnabled ? 1 : 0);
+            PlayerPrefs.Save();
             UpdateVolumes();
+        }
+        
+        // Save volume settings
+        public void SaveVolumeSettings()
+        {
+            PlayerPrefs.SetFloat("SoundVolume", soundVolume);
+            PlayerPrefs.SetFloat("MusicVolume", musicVolume);
+            PlayerPrefs.Save();
         }
         
         private void UpdateVolumes()

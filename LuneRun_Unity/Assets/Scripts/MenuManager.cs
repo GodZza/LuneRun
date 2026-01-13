@@ -27,6 +27,7 @@ namespace LuneRun
         // References
         private Settings settings;
         private IRunnerApi runnerApi;
+        private UserData currentUserData;
         
         public void Initialize(Settings settings, IRunnerApi runnerApi)
         {
@@ -95,6 +96,8 @@ namespace LuneRun
         
         private void OnUserDataReceived(UserData userData)
         {
+            currentUserData = userData;
+            
             // Update level buttons based on unlocked status
             // Determine if last level is unlocked
             isLastUnlocked = userData.GetScore(32) != 0f;
@@ -114,6 +117,12 @@ namespace LuneRun
                     }
                 }
             }
+        }
+        
+        private bool IsLevelUnlocked(int level)
+        {
+            if (currentUserData == null) return false;
+            return currentUserData.GetScore(level) != 0f;
         }
         
         public void UpdateMenu()
@@ -231,15 +240,30 @@ namespace LuneRun
         public void OnLevelButtonClicked(int level)
         {
             // Check if level is unlocked
-            // If local runner API, allow selection even if not unlocked for testing
-            if (runnerApi is LocalRunnerApi)
+            bool unlocked = IsLevelUnlocked(level) || (runnerApi is LocalRunnerApi);
+            
+            if (unlocked && HighscoreManager.Instance != null)
             {
-                selectedLevel = level;
+                // Show highscore dialog with option to play
+                HighscoreManager.Instance.ShowLevelHighscore(
+                    levelId: level,
+                    userId: runnerApi.GetUserId(),
+                    runnerApi: runnerApi,
+                    onClose: () =>
+                    {
+                        Debug.Log("Highscore dialog closed");
+                    },
+                    actionButtonLabel: "Play",
+                    onAction: () =>
+                    {
+                        selectedLevel = level;
+                    },
+                    isLastUnlocked: (level == 32 && isLastUnlocked)
+                );
             }
             else
             {
-                // Show highscore dialog for unlocked levels
-                // TODO: Implement highscore dialog
+                // If not unlocked or HighscoreManager not available, just select level
                 selectedLevel = level;
             }
         }

@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.UI;
+using System.Collections;
 
 namespace LuneRun
 {
@@ -130,34 +132,150 @@ namespace LuneRun
         
         private void ShowHighscore()
         {
-            // TODO: Implement highscore UI
-            Debug.Log("Show highscore for level " + levelId);
+            // Implement highscore UI using HighscoreManager
+            if (HighscoreManager.Instance != null && runnerApi != null)
+            {
+                HighscoreManager.Instance.ShowLevelHighscore(
+                    levelId: levelId,
+                    userId: runnerApi.GetUserId(),
+                    runnerApi: runnerApi,
+                    onClose: () =>
+                    {
+                        Debug.Log("Highscore panel closed");
+                    },
+                    actionButtonLabel: "Continue",
+                    onAction: () =>
+                    {
+                        HideHighscore();
+                    },
+                    isLastUnlocked: false
+                );
+            }
+            else
+            {
+                Debug.LogWarning("Cannot show highscore: HighscoreManager or runnerApi not available");
+            }
         }
         
         private void HideHighscore()
         {
-            // TODO: Hide highscore UI
+            // Hide highscore UI
+            if (HighscoreManager.Instance != null)
+            {
+                HighscoreManager.Instance.HideHighscore();
+            }
         }
         
         // Called when level is completed (e.g., player reaches end)
         public void CompleteLevel()
         {
             hasCompleted = true;
+            
             // Show curtain effect
-            // TODO: Implement curtain
+            ShowCurtain();
+            
+            // Submit score to API
+            SubmitScore();
+            
+            // Exit level after curtain animation
+            StartCoroutine(ExitAfterCurtain());
+        }
+        
+        private void ShowCurtain()
+        {
+            // Create a simple curtain effect (black screen fade in)
+            GameObject curtain = new GameObject("Curtain", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            
+            // Find or create canvas
+            Canvas canvas = FindObjectOfType<Canvas>();
+            if (canvas == null)
+            {
+                GameObject canvasObj = new GameObject("Canvas");
+                canvas = canvasObj.AddComponent<Canvas>();
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                canvasObj.AddComponent<CanvasScaler>();
+                canvasObj.AddComponent<GraphicRaycaster>();
+            }
+            
+            curtain.transform.SetParent(canvas.transform, false);
+            RectTransform rt = curtain.GetComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            
+            Image img = curtain.GetComponent<Image>();
+            img.color = new Color(0f, 0f, 0f, 0f); // Start transparent
+            
+            // Animate fade in
+            StartCoroutine(FadeCurtain(img));
+        }
+        
+        private System.Collections.IEnumerator FadeCurtain(Image curtainImage)
+        {
+            float duration = 1.5f;
+            float elapsed = 0f;
+            
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float alpha = Mathf.Clamp01(elapsed / duration);
+                curtainImage.color = new Color(0f, 0f, 0f, alpha);
+                yield return null;
+            }
+            
+            // Destroy curtain after animation
+            Destroy(curtainImage.gameObject);
+        }
+        
+        private System.Collections.IEnumerator ExitAfterCurtain()
+        {
+            yield return new WaitForSeconds(2f); // Wait for curtain animation
             shouldExit = true;
+        }
+        
+        private void SubmitScore()
+        {
+            if (runnerApi != null && playerDistance > 0)
+            {
+                // Calculate score based on distance/time (simplified)
+                float score = playerDistance; // In original game, score is time in seconds
+                
+                // Submit score asynchronously
+                runnerApi.SubmitScore(levelId, score, (success) =>
+                {
+                    Debug.Log($"Score submission {(success ? "succeeded" : "failed")}");
+                });
+            }
         }
         
         // Called when player fails (e.g., falls off track)
         public void FailLevel()
         {
             hasFailed = true;
-            // Restart level
-            // TODO: Implement restart logic
-            Debug.Log("Level failed, restarting");
-            hasFailed = false;
-            // Reset player position
+            
+            // Restart level with delay
+            Debug.Log("Level failed, restarting in 1 second");
+            
+            // Reset player position immediately
             playerController?.Reset();
+            
+            // Clear and regenerate track
+            if (trackGenerator != null)
+            {
+                trackGenerator.ClearTrack();
+                trackGenerator.GenerateTrack(levelId);
+            }
+            
+            // Reset game state after a short delay
+            StartCoroutine(DelayedReset());
+        }
+        
+        private System.Collections.IEnumerator DelayedReset()
+        {
+            yield return new WaitForSeconds(1f);
+            hasFailed = false;
+            Debug.Log("Level restarted");
         }
     }
 }
