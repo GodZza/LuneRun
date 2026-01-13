@@ -10,6 +10,6 @@ namespace LuneRun
         public const float OriginalY = 600f;
         public const string GameApiUrl = "http://api.playchilla.com/";
         public const string RunnerApiUrl = "http://api.playchilla.com/runner/";
-        public static bool SkipToGame => true; // Skip to game for testing playability
+        public static bool SkipToGame => false; // Show menu for UI testing
     }
 }

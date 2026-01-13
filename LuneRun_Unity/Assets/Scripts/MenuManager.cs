@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace LuneRun
 {
@@ -31,12 +32,18 @@ namespace LuneRun
         
         public void Initialize(Settings settings, IRunnerApi runnerApi)
         {
+            Debug.Log("[LuneRun] MenuManager.Initialize - Starting menu initialization");
             this.settings = settings;
             this.runnerApi = runnerApi;
+            
+            // Check UI references and log warnings if missing
+            CheckUIReferences();
             
             // Setup UI
             if (logoText != null) logoText.text = Constants.Name;
             if (versionText != null) versionText.text = Constants.Version;
+            
+            Debug.Log($"[LuneRun] MenuManager.Initialize - UI refs: logoText={logoText != null}, versionText={versionText != null}, levelButtons count={levelButtons?.Count ?? 0}");
             
             // Load user data asynchronously
             runnerApi.GetUserData(OnUserDataReceived);
@@ -46,6 +53,8 @@ namespace LuneRun
             
             // Ensure level buttons exist and have listeners
             EnsureLevelButtons();
+            
+            Debug.Log("[LuneRun] MenuManager.Initialize - Menu initialization completed");
         }
         
         private void UpdateSettings()
@@ -70,17 +79,73 @@ namespace LuneRun
             }
         }
         
+        private void CheckUIReferences()
+        {
+            Debug.Log("[LuneRun] MenuManager.CheckUIReferences - Checking UI references");
+            
+            List<string> missingRefs = new List<string>();
+            
+            if (mainMenuPanel == null) missingRefs.Add("mainMenuPanel");
+            if (helpPanel == null) missingRefs.Add("helpPanel");
+            if (soundButton == null) missingRefs.Add("soundButton");
+            if (musicButton == null) missingRefs.Add("musicButton");
+            if (helpButton == null) missingRefs.Add("helpButton");
+            if (fullscreenButton == null) missingRefs.Add("fullscreenButton");
+            if (tweetButton == null) missingRefs.Add("tweetButton");
+            if (linkButton == null) missingRefs.Add("linkButton");
+            if (survivorsButton == null) missingRefs.Add("survivorsButton");
+            if (paypalButton == null) missingRefs.Add("paypalButton");
+            if (versionText == null) missingRefs.Add("versionText");
+            if (logoText == null) missingRefs.Add("logoText");
+            
+            int levelButtonCount = levelButtons?.Count(btn => btn != null) ?? 0;
+            if (levelButtonCount < 32)
+            {
+                missingRefs.Add($"levelButtons ({levelButtonCount}/32)");
+            }
+            
+            if (missingRefs.Count > 0)
+            {
+                Debug.LogWarning($"[LuneRun] MenuManager.CheckUIReferences - Missing {missingRefs.Count} UI references: {string.Join(", ", missingRefs)}");
+                Debug.LogWarning("[LuneRun] The game menu UI has not been properly set up.");
+                Debug.LogWarning("[LuneRun] To fix this, please do one of the following:");
+                Debug.LogWarning("[LuneRun] 1. In Unity Editor, go to 'Tools/LuneRun/Setup Scene UI' to create the menu UI");
+                Debug.LogWarning("[LuneRun] 2. Or run the game with Constants.SkipToGame = true to skip the menu");
+                Debug.LogWarning("[LuneRun] 3. Or manually create UI elements and assign them to MenuManager in the inspector");
+            }
+            else
+            {
+                Debug.Log("[LuneRun] MenuManager.CheckUIReferences - All UI references are valid");
+            }
+        }
+        
         private void EnsureLevelButtons()
         {
+            Debug.Log("[LuneRun] MenuManager.EnsureLevelButtons - Starting");
+            
             // Ensure we have 32 level buttons
             if (levelButtons == null)
             {
                 levelButtons = new List<Button>();
+                Debug.Log("[LuneRun] MenuManager.EnsureLevelButtons - Created new levelButtons list");
             }
             
-            // If no buttons are provided, we cannot create them without a parent.
-            // This method assumes buttons are already created by editor tool.
-            // Just ensure each button has the correct click listener.
+            // If the list is empty, try to find buttons in the scene
+            if (levelButtons.Count == 0 || levelButtons[0] == null)
+            {
+                Debug.Log("[LuneRun] MenuManager.EnsureLevelButtons - Level buttons list is empty or null, searching in scene...");
+                FindLevelButtonsInScene();
+            }
+            
+            // Log the current state
+            int validButtonCount = 0;
+            for (int i = 0; i < levelButtons.Count; i++)
+            {
+                if (levelButtons[i] != null) validButtonCount++;
+            }
+            Debug.Log($"[LuneRun] MenuManager.EnsureLevelButtons - Found {validButtonCount} valid buttons out of {levelButtons.Count} total");
+            
+            // Ensure each button has the correct click listener
             for (int i = 0; i < levelButtons.Count; i++)
             {
                 int level = i + 1;
@@ -90,6 +155,76 @@ namespace LuneRun
                     // Remove existing listeners and add our own
                     btn.onClick.RemoveAllListeners();
                     btn.onClick.AddListener(() => OnLevelButtonClicked(level));
+                    Debug.Log($"[LuneRun] MenuManager.EnsureLevelButtons - Set click listener for Level {level} button");
+                }
+                else if (i < 32) // Only warn for first 32 levels
+                {
+                    Debug.LogWarning($"[LuneRun] MenuManager.EnsureLevelButtons - Level {level} button is null");
+                }
+            }
+            
+            // If we still don't have enough buttons, warn the user
+            if (validButtonCount < 32)
+            {
+                Debug.LogWarning($"[LuneRun] MenuManager.EnsureLevelButtons - Only {validButtonCount} level buttons found. UI may not be properly set up.");
+                Debug.LogWarning("[LuneRun] Please run 'Tools/LuneRun/Setup Scene UI' in the Unity editor to create the menu UI.");
+            }
+            
+            Debug.Log("[LuneRun] MenuManager.EnsureLevelButtons - Completed");
+        }
+        
+        private void FindLevelButtonsInScene()
+        {
+            // Clear the list first
+            levelButtons.Clear();
+            
+            // Try to find buttons by name pattern "LevelXButton"
+            for (int i = 1; i <= 32; i++)
+            {
+                string buttonName = "Level" + i + "Button";
+                GameObject buttonObj = GameObject.Find(buttonName);
+                if (buttonObj != null)
+                {
+                    Button btn = buttonObj.GetComponent<Button>();
+                    if (btn != null)
+                    {
+                        levelButtons.Add(btn);
+                        Debug.Log($"[LuneRun] MenuManager.FindLevelButtonsInScene - Found button for Level {i}: {buttonName}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[LuneRun] MenuManager.FindLevelButtonsInScene - GameObject {buttonName} found but no Button component");
+                    }
+                }
+                else
+                {
+                    // Try alternative search: look for buttons under LevelPanel
+                    GameObject levelPanel = GameObject.Find("LevelPanel");
+                    if (levelPanel != null)
+                    {
+                        Button[] allButtons = levelPanel.GetComponentsInChildren<Button>(true);
+                        if (allButtons.Length > 0)
+                        {
+                            // Add all buttons found in LevelPanel
+                            levelButtons.AddRange(allButtons);
+                            Debug.Log($"[LuneRun] MenuManager.FindLevelButtonsInScene - Found {allButtons.Length} buttons in LevelPanel");
+                            break; // Stop searching individually
+                        }
+                    }
+                }
+            }
+            
+            // If still empty, try to find any buttons with "Level" in name
+            if (levelButtons.Count == 0)
+            {
+                Button[] allButtons = FindObjectsByType<Button>(FindObjectsSortMode.None);
+                foreach (Button btn in allButtons)
+                {
+                    if (btn.name.Contains("Level") || (btn.gameObject.name.Contains("Level")))
+                    {
+                        levelButtons.Add(btn);
+                        Debug.Log($"[LuneRun] MenuManager.FindLevelButtonsInScene - Found button by name pattern: {btn.name}");
+                    }
                 }
             }
         }
