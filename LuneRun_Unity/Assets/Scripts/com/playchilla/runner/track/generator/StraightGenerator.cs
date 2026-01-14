@@ -7,7 +7,7 @@ namespace com.playchilla.runner.track.generator
 {
     public class StraightGenerator : SegmentGenerator, ISegmentGenerator
     {
-        public StraightGenerator(Track track, shared.math.Random rnd, Materials materials) 
+        public StraightGenerator(Track track, global::shared.math.Random rnd, Materials materials) 
             : base(track, rnd, materials)
         {
         }

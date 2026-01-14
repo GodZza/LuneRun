@@ -7,7 +7,7 @@ namespace com.playchilla.runner.track.generator
 {
     public class HoleGenerator : SegmentGenerator, ISegmentGenerator
     {
-        public HoleGenerator(Track track, shared.math.Random rnd, Materials materials) 
+        public HoleGenerator(Track track, global::shared.math.Random rnd, Materials materials) 
             : base(track, rnd, materials)
         {
         }

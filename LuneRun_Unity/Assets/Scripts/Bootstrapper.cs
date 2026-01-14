@@ -48,6 +48,14 @@ namespace LuneRun
                 highscoreManagerObj.AddComponent<HighscoreManager>();
             }
             
+            // Create Engine (Flash-style entry point)
+            if (FindObjectOfType<com.playchilla.runner.Engine>() == null)
+            {
+                GameObject engineObj = new GameObject("Engine");
+                engineObj.AddComponent<com.playchilla.runner.Engine>();
+                DontDestroyOnLoad(engineObj);
+            }
+            
             // Ensure camera exists
             if (Camera.main == null)
             {

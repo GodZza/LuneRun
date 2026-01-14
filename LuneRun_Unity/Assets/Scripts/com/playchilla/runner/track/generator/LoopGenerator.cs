@@ -7,7 +7,7 @@ namespace com.playchilla.runner.track.generator
 {
     public class LoopGenerator : SegmentGenerator, ISegmentGenerator
     {
-        public LoopGenerator(Track track, shared.math.Random rnd, Materials materials) 
+        public LoopGenerator(Track track, global::shared.math.Random rnd, Materials materials) 
             : base(track, rnd, materials)
         {
         }

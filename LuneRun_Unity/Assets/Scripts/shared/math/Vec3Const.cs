@@ -165,5 +165,6 @@ namespace shared.math
         {
             return string.Format("Vec3Const({0}, {1}, {2})", _x, _y, _z);
         }
+
     }
 }

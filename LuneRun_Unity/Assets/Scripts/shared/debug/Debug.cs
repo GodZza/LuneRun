@@ -11,5 +11,7 @@ namespace shared.debug
                 UnityEngine.Debug.LogError("[Assert] " + message);
             }
         }
+        
+        public static void setAssertHandler(RemoteAssertHandler handler) { }
     }
 }

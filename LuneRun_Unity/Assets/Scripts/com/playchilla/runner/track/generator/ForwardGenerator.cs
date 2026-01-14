@@ -10,7 +10,7 @@ namespace com.playchilla.runner.track.generator
         private Level _level;
         private int _parts = -1;
 
-        public ForwardGenerator(Track track, shared.math.Random rnd, Materials materials, Level level) 
+        public ForwardGenerator(Track track, global::shared.math.Random rnd, Materials materials, Level level) 
             : base(track, rnd, materials)
         {
             _level = level;

@@ -9,7 +9,7 @@ namespace com.playchilla.runner.track.generator
     {
         private HoleGenerator _holeGenerator;
 
-        public IslandGenerator(Track track, shared.math.Random rnd, Materials materials) 
+        public IslandGenerator(Track track, global::shared.math.Random rnd, Materials materials) 
             : base(track, rnd, materials)
         {
             _holeGenerator = new HoleGenerator(track, rnd, materials);

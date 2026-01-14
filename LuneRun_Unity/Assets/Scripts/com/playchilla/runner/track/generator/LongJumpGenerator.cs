@@ -7,7 +7,7 @@ namespace com.playchilla.runner.track.generator
 {
     public class LongJumpGenerator : SegmentGenerator, ISegmentGenerator
     {
-        public LongJumpGenerator(Track track, shared.math.Random rnd, Materials materials) 
+        public LongJumpGenerator(Track track, global::shared.math.Random rnd, Materials materials) 
             : base(track, rnd, materials)
         {
         }

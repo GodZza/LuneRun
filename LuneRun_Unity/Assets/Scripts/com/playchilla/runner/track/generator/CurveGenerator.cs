@@ -7,7 +7,7 @@ namespace com.playchilla.runner.track.generator
 {
     public class CurveGenerator : SegmentGenerator, ISegmentGenerator
     {
-        public CurveGenerator(Track track, shared.math.Random rnd, Materials materials) 
+        public CurveGenerator(Track track, global::shared.math.Random rnd, Materials materials) 
             : base(track, rnd, materials)
         {
         }

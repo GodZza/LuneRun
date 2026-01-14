@@ -27,7 +27,7 @@ namespace com.playchilla.runner.track
             return _lastGenerator;
         }
 
-        public void Generate(Track track, shared.math.Random rnd, double difficulty, int count, int levelId)
+        public void Generate(Track track, global::shared.math.Random rnd, double difficulty, int count, int levelId)
         {
             // Simplified generation logic
             // In real implementation, would select appropriate generator based on conditions

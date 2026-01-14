@@ -9,7 +9,7 @@ namespace com.playchilla.runner.track.generator
     {
         private bool _up;
 
-        public SlopeGenerator(Track track, shared.math.Random rnd, Materials materials, bool up) 
+        public SlopeGenerator(Track track, global::shared.math.Random rnd, Materials materials, bool up) 
             : base(track, rnd, materials)
         {
             _up = up;

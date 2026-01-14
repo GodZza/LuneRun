@@ -9,10 +9,10 @@ namespace com.playchilla.runner.track.generator
     public class SegmentGenerator
     {
         protected Track _track;
-        protected shared.math.Random _rnd;
+        protected global::shared.math.Random _rnd;
         protected Materials _materials;
 
-        public SegmentGenerator(Track track, shared.math.Random rnd, Materials materials)
+        public SegmentGenerator(Track track, global::shared.math.Random rnd, Materials materials)
         {
             _track = track;
             _rnd = rnd;
