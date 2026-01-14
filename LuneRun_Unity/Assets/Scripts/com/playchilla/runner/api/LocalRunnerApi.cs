@@ -9,7 +9,7 @@ namespace com.playchilla.runner.api
         
         public LocalRunnerApi(ApiUser apiUser)
         {
-            Debug.Assert(apiUser != null, "Trying to create local runner api without user.");
+            shared.debug.Debug.Assert(apiUser != null, "Trying to create local runner api without user.");
             _apiUser = apiUser;
         }
         

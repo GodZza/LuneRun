@@ -6,6 +6,8 @@ using shared.debug;
 using away3d.containers;
 using away3d.events;
 using away3d.core.managers;
+using shared.sound;
+using LuneRun;
 
 namespace com.playchilla.runner
 {
@@ -22,8 +24,8 @@ namespace com.playchilla.runner
 
         // Internal fields
         internal RemoteAssertHandler _remoteAssertHandler;
-        internal Settings _settings;
-        internal IRunnerApi _runnerApi;
+        internal LuneRun.Settings _settings;
+        internal com.playchilla.runner.api.IRunnerApi _runnerApi;
         internal View3D _view;
         internal bool _initialize3D = false;
         internal bool _isHardware = false;
@@ -37,6 +39,7 @@ namespace com.playchilla.runner
         internal object _game;
         internal object _prelude;
         internal object _bg;
+        internal GameManager _gameManager;
 
         // For self-created view tracking
         internal int _selfCreated = 0;
@@ -45,12 +48,19 @@ namespace com.playchilla.runner
         {
             // Simplified initialization
             _remoteAssertHandler = new RemoteAssertHandler("http://www.playchilla.com/api/assert.php", Constants.Name, Constants.Version);
-            Debug.setAssertHandler(_remoteAssertHandler);
+            shared.debug.Debug.setAssertHandler(_remoteAssertHandler);
             UnityEngine.Debug.Log("Engine initialized");
-            _settings = Settings.Load();
+            _settings = LuneRun.Settings.Load();
             if (Constants.SkipToGame)
             {
                 _state = _MainMenu;
+            }
+            
+            // Get reference to GameManager
+            _gameManager = GameManager.Instance;
+            if (_gameManager != null)
+            {
+                UnityEngine.Debug.Log("Engine: Found GameManager");
             }
         }
 
@@ -65,9 +75,20 @@ namespace com.playchilla.runner
             // Main update loop
             pt.Start("onEnterFrame");
 
-            // Update audio (placeholder)
-            // Audio.Sound.update(Time.time);
-            // Audio.Music.update(Time.time);
+            // Update audio
+            Audio.Sound.update((int)(Time.time * 1000));
+            Audio.Music.update((int)(Time.time * 1000));
+
+            // Handle key events
+            if (Input.GetKeyDown(KeyCode.F3))
+            {
+                if (_ptView != null)
+                    _ptView.visible = !_ptView.visible;
+            }
+            else if (Input.GetKeyDown(KeyCode.F11) && _state != _Login)
+            {
+                Screen.fullScreen = !Screen.fullScreen;
+            }
 
             // State machine
             switch (_state)
@@ -85,7 +106,7 @@ namespace com.playchilla.runner
                     UpdateGame();
                     break;
                 default:
-                    Debug.Assert(false, "Bad state.");
+                    shared.debug.Debug.Assert(false, "Bad state.");
                     break;
             }
 
@@ -94,16 +115,31 @@ namespace com.playchilla.runner
 
         internal void UpdateLogin()
         {
+            // Delegate to GameManager if available
+            if (_gameManager != null)
+            {
+                // Let GameManager handle login state
+                return;
+            }
+            
             // Placeholder for login logic
             // For now, transition to main menu after a delay
             if (Time.time > 5.0f) // Example condition
             {
+                UnityEngine.Debug.Log("Engine: Login -> MainMenu");
                 _state = _MainMenu;
             }
         }
 
         internal void UpdateMenu()
         {
+            // Delegate to GameManager if available
+            if (_gameManager != null)
+            {
+                // Let GameManager handle menu state
+                return;
+            }
+            
             // Placeholder for menu logic
             // If a level is selected, transition to game or prelude
             if (_selectedLevel != -1)
@@ -118,6 +154,13 @@ namespace com.playchilla.runner
 
         internal void UpdatePrelude()
         {
+            // Delegate to GameManager if available
+            if (_gameManager != null)
+            {
+                // Let GameManager handle prelude state
+                return;
+            }
+            
             // Placeholder for prelude logic
             // After prelude, transition to game or main menu
             if (_prelude == null)
@@ -135,6 +178,13 @@ namespace com.playchilla.runner
 
         internal void UpdateGame()
         {
+            // Delegate to GameManager if available
+            if (_gameManager != null)
+            {
+                // Let GameManager handle game state
+                return;
+            }
+            
             // Placeholder for game logic
             if (!_initialize3D)
             {
