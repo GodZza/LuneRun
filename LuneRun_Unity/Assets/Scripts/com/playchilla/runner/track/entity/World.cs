@@ -78,11 +78,13 @@ namespace com.playchilla.runner.track.entity
             RunnerEntity closest = null;
             foreach (var candidate in candidates)
             {
-                double distSqr = candidate.GetPos().distanceSqr(position);
+                var runnerEntity = candidate as RunnerEntity;
+                if (runnerEntity == null) continue;
+                double distSqr = runnerEntity.GetPos().distanceSqr(position);
                 if (distSqr < minDistSqr)
                 {
                     minDistSqr = distSqr;
-                    closest = candidate;
+                    closest = runnerEntity;
                 }
             }
             return closest;

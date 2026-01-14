@@ -1,6 +1,7 @@
 using UnityEngine;
 using com.playchilla.runner.api;
 using com.playchilla.runner.player;
+using com.playchilla.runner.track;
 using com.playchilla.gameapi.api;
 using shared.input;
 
@@ -15,6 +16,7 @@ namespace com.playchilla.runner
         private object _gameCont; // Placeholder for game container
         private object _world; // Placeholder for World instance
         private PlayerView _playerView;
+        private Track _track;
         
         public void Initialize(int levelId, bool isHardware, Settings settings, IRunnerApi runnerApi)
         {
@@ -27,7 +29,12 @@ namespace com.playchilla.runner
         {
             return _player;
         }
-        
+
+        public Player getPlayer()
+        {
+            return _player;
+        }
+
         public Materials GetMaterials()
         {
             return _materials;
@@ -80,6 +87,16 @@ namespace com.playchilla.runner
         public com.playchilla.runner.player.PlayerView getPlayerView()
         {
             return this._playerView;
+        }
+
+        public Track GetTrack()
+        {
+            return _track;
+        }
+
+        public Track getTrack()
+        {
+            return _track;
         }
 
     }

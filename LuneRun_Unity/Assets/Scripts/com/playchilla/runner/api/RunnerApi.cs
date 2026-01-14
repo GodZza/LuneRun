@@ -20,7 +20,7 @@ namespace com.playchilla.runner.api
 
         public int GetUserId()
         {
-            return _apiUser.getId();
+            return (int)_apiUser.GetId();
         }
 
         public void GetUserData(IGetUserDataCallback callback)

@@ -9,7 +9,7 @@ namespace com.playchilla.runner.ambient
         private bool _isHardware;
         private com.playchilla.runner.player.Player _player;
         private com.playchilla.runner.track.Track _track;
-        private GameObject _gameCont;
+        private object _gameCont;
         private com.playchilla.runner.Materials _materials;
         private List<Skyscraper> _skyscrapers = new List<Skyscraper>();
 

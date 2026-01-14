@@ -34,7 +34,7 @@ namespace com.playchilla.runner.player
         public Vec3 GetPos() => _pos;
         
         public bool IsOnGround() => _onGround;
-        public double GetSpeedAlpha() => _vel.Length() / 100.0; // Placeholder MaxSpeed
+        public double GetSpeedAlpha() => _vel.length() / 100.0; // Placeholder MaxSpeed
         public double GetSpeedY() => _vel.y;
         public object GetCurrentPart() => _currentPart;
         public void SetListener(IPlayerListener listener) => _listener = listener;
