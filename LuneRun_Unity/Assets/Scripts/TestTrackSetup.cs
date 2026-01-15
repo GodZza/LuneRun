@@ -12,7 +12,7 @@ namespace LuneRun
         [SerializeField] private float maxSlopeAngle = 30f;
         
         [Header("玩家设置")]
-        [SerializeField] private Vector3 playerStartPosition = new Vector3(0, 0.5f, 0);
+        [SerializeField] private Vector3 playerStartPosition = new Vector3(0, 0.2f, 0);
         [SerializeField] private float cameraDistance = 20f;
         [SerializeField] private float cameraHeight = 10f;
         
@@ -43,6 +43,9 @@ namespace LuneRun
             
             // 定位相机
             PositionCamera();
+            
+            // 调试：检查玩家脚下是否有轨道
+            CheckGroundDebug();
             
             Debug.Log("测试轨道场景设置完成！");
             Debug.Log("操作说明：");
@@ -226,10 +229,24 @@ namespace LuneRun
         
         void Update()
         {
+            // 调试输入状态（每30帧输出一次）
+            if (Time.frameCount % 30 == 0)
+            {
+                bool spaceDown = Input.GetKey(KeyCode.Space);
+                bool spacePressed = Input.GetKeyDown(KeyCode.Space);
+                bool spaceReleased = Input.GetKeyUp(KeyCode.Space);
+                Debug.Log($"输入状态: Space按住={spaceDown}, 按下={spacePressed}, 松开={spaceReleased}");
+            }
+            
             // 更新玩家控制器（核心玩法循环）
             if (playerController != null)
             {
                 playerController.Tick();
+            }
+            else
+            {
+                Debug.LogError("PlayerController 为空！");
+                return;
             }
             
             // 简单的相机跟随
@@ -255,8 +272,8 @@ namespace LuneRun
             // 显示玩家状态
             if (playerController != null)
             {
-                // 每60帧显示一次状态
-                if (Time.frameCount % 60 == 0)
+                // 每30帧显示一次状态
+                if (Time.frameCount % 30 == 0)
                 {
                     Debug.Log($"玩家状态: 速度={playerController.GetSpeed():F2}, 地面={playerController.IsOnGround()}, 位置={playerController.transform.position:F1}");
                 }
@@ -314,6 +331,26 @@ namespace LuneRun
                 Gizmos.color = Color.magenta;
                 Vector3 forward = playerController.transform.forward;
                 Gizmos.DrawRay(playerController.transform.position, forward * 2f);
+            }
+        }
+        
+        void CheckGroundDebug()
+        {
+            if (playerController == null) return;
+            
+            Vector3 playerPos = playerController.transform.position;
+            float rayLength = 1f;
+            RaycastHit hit;
+            bool hasGround = Physics.Raycast(playerPos, Vector3.down, out hit, rayLength);
+            
+            Debug.Log($"地面检测: 玩家位置={playerPos}, 是否有地面={hasGround}");
+            if (hasGround)
+            {
+                Debug.Log($"击中对象: {hit.collider.gameObject.name}, 距离={hit.distance}, 法线={hit.normal}");
+            }
+            else
+            {
+                Debug.LogWarning("玩家脚下没有检测到地面！请检查轨道生成。");
             }
         }
         

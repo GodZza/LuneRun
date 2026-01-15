@@ -88,6 +88,12 @@ namespace LuneRun
         // ActionScript Player.tick() equivalent
         public void Tick()
         {
+            if (characterController == null)
+            {
+                Debug.LogError("CharacterController 为空！");
+                return;
+            }
+            
             // Gather input
             bool prevSpaceDown = spaceDown;
             spaceDown = Input.GetKey(KeyCode.Space);
@@ -146,8 +152,11 @@ namespace LuneRun
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
             }
             
-            // Debug logging (uncomment for testing)
-            // Debug.Log($"Player: grounded={isGrounded}, spaceDown={spaceDown}, released={spaceReleasedFlag}, speed={currentSpeed}, velocity={velocity}");
+            // Debug logging（每30帧输出一次）
+            if (Time.frameCount % 30 == 0)
+            {
+                Debug.Log($"Player: grounded={isGrounded}, spaceDown={spaceDown}, released={spaceReleasedFlag}, speed={currentSpeed:F2}, velocity={velocity}");
+            }
         }
         
         // ActionScript _setWantedSpeeds()
