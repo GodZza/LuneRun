@@ -49,6 +49,10 @@ namespace LuneRun
         private AudioSource breathSound; // _breath
         private bool breathOn = false; // _breathOn
         
+        // Hand cubes for visual representation (simulating hands from original Flash game)
+        private GameObject leftHandCube;
+        private GameObject rightHandCube;
+        
         public void Initialize(Settings settings)
         {
             // Ensure CharacterController component
@@ -81,6 +85,71 @@ namespace LuneRun
             // Load audio clip? Will be handled by AudioManager
             
             Debug.Log("PlayerController initialized at position: " + transform.position);
+            
+            // Create hand cubes (simulating hands from original Flash game)
+            CreateHandCubes();
+        }
+        
+        // Create two cubes to represent hands (simulating original Flash game)
+        private void CreateHandCubes()
+        {
+            // Create left hand cube (upper arm)
+            leftHandCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            leftHandCube.name = "LeftHandCube";
+            leftHandCube.transform.SetParent(transform);
+            leftHandCube.transform.localPosition = new Vector3(-0.3f, 1.0f, 0.2f);
+            leftHandCube.transform.localScale = new Vector3(0.1f, 0.1f, 0.5f); // Original Flash: 0.1, 0.1, 0.5
+            
+            // Create right hand cube (upper arm)
+            rightHandCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            rightHandCube.name = "RightHandCube";
+            rightHandCube.transform.SetParent(transform);
+            rightHandCube.transform.localPosition = new Vector3(0.3f, 1.0f, 0.2f);
+            rightHandCube.transform.localScale = new Vector3(0.1f, 0.1f, 0.5f);
+            
+            // Set colors for visibility (red for left, blue for right)
+            leftHandCube.GetComponent<Renderer>().material.color = Color.red;
+            rightHandCube.GetComponent<Renderer>().material.color = Color.blue;
+            
+            Debug.Log("Hand cubes created for player (simulating original Flash game)");
+        }
+        
+        // Update hand animation based on player state (simulating original Flash game)
+        private void UpdateHandAnimation()
+        {
+            if (leftHandCube == null || rightHandCube == null) return;
+            
+            float time = Time.time;
+            
+            if (isGrounded)
+            {
+                // On ground animation
+                float speedAlpha = GetSpeedAlpha();
+                if (speedAlpha > 0.1f)
+                {
+                    // Swing arms while moving - amplitude depends on speed
+                    float swingAmplitude = 30f * speedAlpha;
+                    float swing = Mathf.Sin(time * 10f) * swingAmplitude;
+                    // Opposite phase for right arm
+                    float rightSwing = Mathf.Sin(time * 10f + Mathf.PI) * swingAmplitude;
+                    
+                    leftHandCube.transform.localRotation = Quaternion.Euler(-10f + swing, 0, 0);
+                    rightHandCube.transform.localRotation = Quaternion.Euler(-10f + rightSwing, 0, 0);
+                }
+                else
+                {
+                    // Idle position
+                    leftHandCube.transform.localRotation = Quaternion.Euler(0, 0, 0);
+                    rightHandCube.transform.localRotation = Quaternion.Euler(0, 0, 0);
+                }
+            }
+            else
+            {
+                // In air animation - arms flailing (original Flash: loc1 = 10 * (time + alpha))
+                float wave = Mathf.Sin(time * 20f) * 60f;
+                leftHandCube.transform.localRotation = Quaternion.Euler(wave, 0, 0);
+                rightHandCube.transform.localRotation = Quaternion.Euler(wave + 180f, 0, 0);
+            }
         }
         
         // Set the track generator reference for collision detection
@@ -162,6 +231,9 @@ namespace LuneRun
             
             // Move character
             characterController.Move(velocity * Time.deltaTime);
+            
+            // Update hand animation (simulating original Flash game hands)
+            UpdateHandAnimation();
             
             // Rotate player to face track direction (if moving forward)
             if (currentSpeed > 0.1f)
