@@ -86,8 +86,18 @@ namespace LuneRun
             
             Debug.Log("PlayerController initialized at position: " + transform.position);
             
+            // Destroy any existing hand cubes (from previous runs)
+            foreach (Transform child in transform)
+            {
+                if (child.name == "LeftHandCube" || child.name == "RightHandCube")
+                {
+                    Destroy(child.gameObject);
+                }
+            }
+            
             // Create hand cubes (simulating hands from original Flash game)
-            CreateHandCubes();
+            // Disabled in favor of complete PlayerView arm system
+            // CreateHandCubes();
         }
         
         // Create two cubes to represent hands (simulating original Flash game)
@@ -233,7 +243,8 @@ namespace LuneRun
             characterController.Move(velocity * Time.deltaTime);
             
             // Update hand animation (simulating original Flash game hands)
-            UpdateHandAnimation();
+            // Disabled in favor of complete PlayerView arm system
+            // UpdateHandAnimation();
             
             // Rotate player to face track direction (if moving forward)
             if (currentSpeed > 0.1f)

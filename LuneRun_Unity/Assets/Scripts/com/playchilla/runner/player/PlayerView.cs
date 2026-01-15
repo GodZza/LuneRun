@@ -316,6 +316,15 @@ namespace com.playchilla.runner.player
         {
             // 如果使用Render方法，可以注释掉这里
             // UpdateHandAnimation((int)(Time.time * 1000), Time.deltaTime);
+            
+            // Alternative: update animation based on Unity's Update loop
+            // This ensures arm cubes are animated even if Render isn't called
+            if (_player != null)
+            {
+                int currentTime = (int)(Time.time * 1000);
+                float alpha = Time.deltaTime;
+                UpdateHandAnimation(currentTime, alpha);
+            }
         }
 
     }

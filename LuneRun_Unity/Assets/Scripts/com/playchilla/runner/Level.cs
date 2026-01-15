@@ -32,6 +32,39 @@ namespace com.playchilla.runner
                 _gameCont.transform.SetParent(transform);
             }
             
+            // Create materials instance
+            _materials = new Materials();
+            
+            // Create input instances
+            KeyboardInput keyboard = new KeyboardInput();
+            MouseInput mouse = new MouseInput();
+            
+            // Create player instance
+            GameObject playerObj = new GameObject("Player");
+            playerObj.transform.SetParent(_gameCont.transform);
+            _player = playerObj.AddComponent<Player>();
+            Vec3 startPos = new Vec3(0, 2, 0);
+            _player.Initialize(this, keyboard, mouse, startPos);
+            
+            // Create track instance (simplified)
+            _track = new Track();
+            
+            // Get main camera
+            Camera mainCamera = Camera.main;
+            if (mainCamera == null)
+            {
+                // Create a camera if none exists
+                GameObject cameraObj = new GameObject("MainCamera");
+                mainCamera = cameraObj.AddComponent<Camera>();
+                cameraObj.tag = "MainCamera";
+            }
+            
+            // Create player view instance with complete arm system
+            GameObject playerViewObj = new GameObject("PlayerView");
+            playerViewObj.transform.SetParent(_gameCont.transform);
+            _playerView = playerViewObj.AddComponent<PlayerView>();
+            _playerView.Initialize(this, _player, mainCamera, _materials, keyboard);
+            
             // Create world instance
             _world = new World(this, _gameCont);
             
@@ -39,7 +72,7 @@ namespace com.playchilla.runner
             // This should be replaced with proper entity generation based on level design
             AddTestEntities();
             
-            Debug.Log($"[Level] Initialized level {levelId} with world");
+            Debug.Log($"[Level] Initialized level {levelId} with world, player, and complete arm system");
         }
         
         private void AddTestEntities()
@@ -142,6 +175,13 @@ namespace com.playchilla.runner
                 _world.Tick(deltaTime);
                 // Render with interpolation (simplified - no interpolation for now)
                 _world.Render(deltaTime, 0f);
+                
+                // Update player view with complete arm system
+                if (_playerView != null)
+                {
+                    int currentTime = (int)(Time.time * 1000);
+                    _playerView.Render(currentTime, 0.0);
+                }
             }
         }
 
