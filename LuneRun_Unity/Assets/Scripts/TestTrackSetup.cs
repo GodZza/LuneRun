@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Reflection;
+using com.playchilla.runner.player;
+using com.playchilla.runner;
 
 namespace LuneRun
 {
@@ -112,7 +114,7 @@ namespace LuneRun
             catch
             {
                 // 如果失败，创建默认设置
-                settings = new Settings();
+                settings = new Settings(Constants.Version, true, true, false);
             }
             
             playerController.Initialize(settings);

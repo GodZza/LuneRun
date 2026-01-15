@@ -34,5 +34,34 @@ namespace com.playchilla.runner.track
         {
             _segments.Remove(segment);
         }
+
+        /// <summary>
+        /// Finds the closest part to the given position.
+        /// </summary>
+        /// <param name="position">Position to check (Vec3).</param>
+        /// <returns>The closest part, or null if no parts exist.</returns>
+        public Part GetClosestPart(shared.math.Vec3 position)
+        {
+            if (_segments.Count == 0)
+                return null;
+
+            Part closest = null;
+            double minDistSqr = double.MaxValue;
+
+            foreach (Segment segment in _segments)
+            {
+                foreach (Part part in segment.GetParts())
+                {
+                    double distSqr = position.distanceSqr(part.pos);
+                    if (distSqr < minDistSqr)
+                    {
+                        minDistSqr = distSqr;
+                        closest = part;
+                    }
+                }
+            }
+
+            return closest;
+        }
     }
 }

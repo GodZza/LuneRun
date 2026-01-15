@@ -1,5 +1,9 @@
 using ActionScript;
 using UnityEngine;
+using com.playchilla.runner.track.entity;
+using com.playchilla.runner.player;
+using shared.math;
+using Random = UnityEngine.Random;
 
 namespace LuneRun
 {
@@ -41,7 +45,7 @@ namespace LuneRun
         private bool dead = false; // _dead
         private LevelManager level; // _level (reference)
         private float speed = 0f; // _speed (scalar speed along track)
-        private EntityWorld world; // _world (entity manager)
+        private World world; // _world (entity manager)
         private AudioSource breathSound; // _breath
         private bool breathOn = false; // _breathOn
         
@@ -77,6 +81,20 @@ namespace LuneRun
             // Load audio clip? Will be handled by AudioManager
             
             Debug.Log("PlayerController initialized at position: " + transform.position);
+        }
+        
+        // Set the track generator reference for collision detection
+        public void SetTrackGenerator(TrackGenerator trackGenerator)
+        {
+            track = trackGenerator;
+            Debug.Log("PlayerController: TrackGenerator set");
+        }
+        
+        // Set the world reference for entity interaction
+        public void SetWorld(World world)
+        {
+            this.world = world;
+            Debug.Log("PlayerController: World set");
         }
         
         // Main update method - corresponds to ActionScript's tick()
@@ -223,28 +241,68 @@ namespace LuneRun
         // ActionScript _clip()
         private void Clip()
         {
-            // Simplified collision with track
-            // In ActionScript, this uses _track.getClosestPart(), surface detection, etc.
-            // For now, we'll keep basic ground detection via CharacterController
-            // TODO: Implement proper track collision
-            // Basic raycast implementation for track collision detection
+            // If we have a track generator, use it for more accurate collision detection
+            if (track != null)
+            {
+                // Calculate distance along track (simplified using Z coordinate)
+                float distanceAlongTrack = transform.position.z;
+                // Get the track segment at this distance
+                TrackSegment segment = track.GetSegmentAtDistance(distanceAlongTrack);
+                if (segment != null)
+                {
+                    // Get position on track at this distance
+                    Vector3 trackPosition = track.GetPositionAtDistance(distanceAlongTrack);
+                    // Adjust player position to stay on track surface
+                    float surfaceHeight = trackPosition.y;
+                    float currentHeight = transform.position.y;
+                    float heightDiff = currentHeight - surfaceHeight;
+                    
+                    if (heightDiff > groundCheckDistance)
+                    {
+                        // Player is above track, apply downward force
+                        velocity.y = Mathf.Min(velocity.y, -0.5f);
+                    }
+                    else if (heightDiff < -groundCheckDistance)
+                    {
+                        // Player is below track, push upward (should not happen with proper ground detection)
+                        velocity.y = Mathf.Max(velocity.y, 1f);
+                    }
+                    
+                    // Update ground state based on proximity to track surface
+                    isGrounded = Mathf.Abs(heightDiff) <= groundCheckDistance;
+                    
+                    // Update track direction based on segment orientation
+                    trackDirection = (segment.endPoint - segment.startPoint).normalized;
+                }
+                else
+                {
+                    // Fallback to raycast if no segment found
+                    RaycastGround();
+                }
+            }
+            else
+            {
+                // No track generator, use basic raycast detection
+                RaycastGround();
+            }
+        }
+        
+        // Basic raycast ground detection (fallback)
+        private void RaycastGround()
+        {
             RaycastHit hit;
-            float rayLength = 0.5f; // Adjust based on player size
-            Vector3 rayOrigin = transform.position + Vector3.up * 0.1f; // Slight offset from feet
+            float rayLength = 0.5f;
+            Vector3 rayOrigin = transform.position + Vector3.up * 0.1f;
             Vector3 rayDirection = Vector3.down;
             
             if (Physics.Raycast(rayOrigin, rayDirection, out hit, rayLength, groundLayer))
             {
-                // If we hit the track, adjust vertical velocity to stay on surface
                 float surfaceHeight = hit.point.y;
                 float currentHeight = transform.position.y;
                 if (currentHeight > surfaceHeight + 0.1f)
                 {
-                    // Apply downward force to stick to track
                     velocity.y = Mathf.Min(velocity.y, -0.5f);
                 }
-                // Optionally, adjust track direction based on surface normal
-                // trackDirection = Vector3.ProjectOnPlane(trackDirection, hit.normal).normalized;
             }
         }
         
@@ -252,16 +310,28 @@ namespace LuneRun
         private void EntityInteraction()
         {
             // Check for speed entities etc.
-            // TODO: Implement entity collision
-            // Basic entity interaction - check for nearby entities
             if (world != null)
             {
-                // Example: Get closest entity within radius
-                object closestEntity = world.GetClosestEntity(transform.position, 1.0f);
-                if (closestEntity != null)
+                // Convert player position to Vec3 for entity query
+                Vec3 playerPos = new Vec3(transform.position.x, transform.position.y, transform.position.z);
+                // Search radius (original uses 1.0)
+                double radius = 1.0;
+                RunnerEntity closest = world.GetClosestEntity(playerPos, radius);
+                if (closest != null)
                 {
-                    // Handle entity interaction (e.g., speed boost, obstacle)
-                    Debug.Log("Entity interaction detected");
+                    // Handle entity interaction based on entity type
+                    if (closest is SpeedEntity)
+                    {
+                        // Speed boost: increase velocity along track direction
+                        velocity += trackDirection * 5f;
+                        Debug.Log($"Speed boost! Velocity increased. Entity at {closest.GetPos()}");
+                        // Mark entity for removal (optional)
+                        closest.Remove();
+                    }
+                    else
+                    {
+                        Debug.Log($"Entity interaction with {closest.GetType().Name} at {closest.GetPos()}");
+                    }
                 }
             }
         }
@@ -407,9 +477,5 @@ namespace LuneRun
         public bool HasRelease() { return Input.GetMouseButtonUp(0); }
     }
     
-    // Placeholder for entity world
-    public class EntityWorld
-    {
-        public object GetClosestEntity(Vector3 pos, float radius) { return null; }
-    }
+
 }

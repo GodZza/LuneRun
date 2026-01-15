@@ -1,6 +1,12 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using System;
+using com.playchilla.gameapi.api;
+using com.playchilla.runner;
+using com.playchilla.runner.track.entity;
+using com.playchilla.runner.player;
+using com.playchilla.runner.api;
 
 namespace LuneRun
 {
@@ -12,7 +18,7 @@ namespace LuneRun
         private int levelId;
         private bool isHardware;
         private Settings settings;
-        private IRunnerApi runnerApi;
+        private com.playchilla.runner.api.IRunnerApi runnerApi;
         
         // Game state
         private bool hasFailed = false;
@@ -23,6 +29,7 @@ namespace LuneRun
         // References
         private PlayerController playerController;
         private TrackGenerator trackGenerator;
+        private Level level;
         
         public void Initialize(Camera view, int levelId, IRunnerApi runnerApi, Settings settings, bool isHardware)
         {
@@ -42,10 +49,17 @@ namespace LuneRun
             }
             trackGenerator.GenerateTrack(levelId);
             
+            // Create level instance (manages world and entities)
+            GameObject levelObj = new GameObject("Level");
+            level = levelObj.AddComponent<Level>();
+            level.Initialize(levelId, isHardware, settings, runnerApi);
+            
             // Create player and place on track start
             GameObject playerObj = new GameObject("Player");
             playerController = playerObj.AddComponent<PlayerController>();
             playerController.Initialize(settings);
+            playerController.SetTrackGenerator(trackGenerator);
+            playerController.SetWorld(level.GetWorld());
             
             // Place player at track start with slight offset above surface
             playerController.transform.position = new Vector3(0, 0.5f, 0);
@@ -140,6 +154,10 @@ namespace LuneRun
             if (trackGenerator != null)
             {
                 trackGenerator.ClearTrack();
+            }
+            if (level != null && level.gameObject != null)
+            {
+                Destroy(level.gameObject);
             }
         }
         
@@ -255,10 +273,10 @@ namespace LuneRun
                 float score = playerDistance; // In original game, score is time in seconds
                 
                 // Submit score asynchronously
-                runnerApi.SubmitScore(levelId, score, (success) =>
+                runnerApi.Score(levelId, score, new ScoreCallback((success) =>
                 {
                     Debug.Log($"Score submission {(success ? "succeeded" : "failed")}");
-                });
+                }));
             }
         }
         
@@ -296,6 +314,28 @@ namespace LuneRun
             yield return new WaitForSeconds(1f);
             hasFailed = false;
             Debug.Log("Level restarted");
+        }
+        
+        // Nested class to implement IScoreCallback
+        private class ScoreCallback : IScoreCallback
+        {
+            private Action<bool> _callback;
+            
+            public ScoreCallback(Action<bool> callback)
+            {
+                _callback = callback;
+            }
+            
+            public void Score(Score score, bool isNewHighscore)
+            {
+                _callback?.Invoke(true);
+            }
+            
+            public void ScoreError(ErrorResponse error)
+            {
+                Debug.LogError($"Score submission error: {error}");
+                _callback?.Invoke(false);
+            }
         }
     }
 }

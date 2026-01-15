@@ -3,6 +3,10 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
 using System.Linq;
+using System;
+using com.playchilla.gameapi.api;
+using com.playchilla.runner.player;
+using com.playchilla.runner.api;
 
 namespace LuneRun
 {
@@ -57,7 +61,7 @@ namespace LuneRun
             Debug.Log($"[LuneRun] MenuManager.Initialize - UI refs: logoText={logoText != null}, versionText={versionText != null}, levelButtons count={levelButtons?.Count ?? 0}");
             
             // Load user data asynchronously
-            runnerApi.GetUserData(OnUserDataReceived);
+            runnerApi.GetUserData(new GetUserDataCallback(OnUserDataReceived, (error) => Debug.LogError($"Failed to load user data: {error}")));
             
             // Update button states based on settings
             UpdateSettings();
@@ -243,7 +247,8 @@ namespace LuneRun
             
             // Update level buttons based on unlocked status
             // Determine if last level (60) is unlocked
-            isLastUnlocked = userData.GetScore(Constants.TotalLevels) != 0f;
+            Score scoreObj = userData.GetScore(Constants.TotalLevels);
+            isLastUnlocked = scoreObj != null && scoreObj.GetScore() != 0.0;
             
             // Update button states for current tab
             ReloadLevelButtonsForCurrentTab();
@@ -252,7 +257,8 @@ namespace LuneRun
         private bool IsLevelUnlocked(int level)
         {
             if (currentUserData == null) return false;
-            return currentUserData.GetScore(level) != 0f;
+            Score scoreObj = currentUserData.GetScore(level);
+            return scoreObj != null && scoreObj.GetScore() != 0.0;
         }
         
         public void UpdateMenu()
@@ -679,6 +685,29 @@ namespace LuneRun
             
             Destroy(buttonTemplate);
             Debug.Log($"[LuneRun] Created {buttonsToCreate} level buttons");
+        }
+        
+        // Nested class to implement IGetUserDataCallback
+        private class GetUserDataCallback : IGetUserDataCallback
+        {
+            private Action<UserData> _successCallback;
+            private Action<ErrorResponse> _errorCallback;
+            
+            public GetUserDataCallback(Action<UserData> successCallback, Action<ErrorResponse> errorCallback)
+            {
+                _successCallback = successCallback;
+                _errorCallback = errorCallback;
+            }
+            
+            public void GetUserData(UserData userData)
+            {
+                _successCallback?.Invoke(userData);
+            }
+            
+            public void GetUserDataError(ErrorResponse error)
+            {
+                _errorCallback?.Invoke(error);
+            }
         }
     }
 }

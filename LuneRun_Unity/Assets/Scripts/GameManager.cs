@@ -1,5 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
+using com.playchilla.runner.player;
+using com.playchilla.runner.api;
+using com.playchilla.gameapi.api;
 
 namespace LuneRun
 {
@@ -226,7 +229,7 @@ namespace LuneRun
                 }
                 if (runnerApi == null)
                 {
-                    runnerApi = new LocalRunnerApi();
+                    runnerApi = new com.playchilla.runner.api.LocalRunnerApi(new ApiUser(1, "Local"));
                 }
                 
                 // Initialize the menu manager
@@ -473,7 +476,7 @@ namespace LuneRun
                 }
                 if (runnerApi == null)
                 {
-                    runnerApi = new LocalRunnerApi();
+                    runnerApi = new com.playchilla.runner.api.LocalRunnerApi(new ApiUser(1, "Local"));
                 }
                 
                 // Initialize the level manager

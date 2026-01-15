@@ -8,6 +8,6 @@ namespace com.playchilla.runner
         public const float OriginalY = 600f;
         public const string GameApiUrl = "http://api.playchilla.com/";
         public const string RunnerApiUrl = "http://api.playchilla.com/runner/";
-        public const bool SkipToGame = false;
+        public const bool SkipToGame = true;
     }
 }

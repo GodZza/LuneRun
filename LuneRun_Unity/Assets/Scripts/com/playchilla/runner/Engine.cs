@@ -24,7 +24,7 @@ namespace com.playchilla.runner
 
         // Internal fields
         internal RemoteAssertHandler _remoteAssertHandler;
-        internal LuneRun.Settings _settings;
+        internal Settings _settings;
         internal com.playchilla.runner.api.IRunnerApi _runnerApi;
         internal View3D _view;
         internal bool _initialize3D = false;
@@ -50,7 +50,7 @@ namespace com.playchilla.runner
             _remoteAssertHandler = new RemoteAssertHandler("http://www.playchilla.com/api/assert.php", Constants.Name, Constants.Version);
             shared.debug.Debug.setAssertHandler(_remoteAssertHandler);
             UnityEngine.Debug.Log("Engine initialized");
-            _settings = LuneRun.Settings.Load();
+            _settings = Settings.Load();
             if (Constants.SkipToGame)
             {
                 _state = _MainMenu;

@@ -7,7 +7,7 @@ namespace shared.math
         protected double _x;
         protected double _y;
         protected double _z;
-        private const double EpsilonSqr = 1e-10;
+        public const double EpsilonSqr = 1e-10;
         
         public static readonly Vec3Const forwardVector = new Vec3Const(0, 0, 1);
 

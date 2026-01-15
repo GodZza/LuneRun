@@ -2,6 +2,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using System;
+using com.playchilla.gameapi.api;
+using com.playchilla.runner.api;
+using com.playchilla.runner.player;
 
 namespace LuneRun
 {
@@ -20,6 +23,29 @@ namespace LuneRun
             this.score = score;
             this.date = date;
         }
+
+        // Nested class to implement IScoreCallback
+        private class ScoreCallback : IScoreCallback
+        {
+            private Action<bool> _callback;
+            
+            public ScoreCallback(Action<bool> callback)
+            {
+                _callback = callback;
+            }
+            
+            public void Score(Score score, bool isNewHighscore)
+            {
+                _callback?.Invoke(true); // success
+            }
+            
+            public void ScoreError(ErrorResponse error)
+            {
+                Debug.LogError($"Score submission error: {error?.GetMessage()}");
+                _callback?.Invoke(false); // failure
+            }
+        }
+
     }
     
     public class HighscoreManager : MonoBehaviour
@@ -292,7 +318,10 @@ namespace LuneRun
             ClearEntries();
             
             // Fetch highscore data from API
-            runnerApi.GetHighscore(levelId, OnHighscoreReceived);
+            runnerApi.GetHighscore(levelId, new GetHighscoreCallback(
+                OnHighscoreReceived,
+                (error) => Debug.LogError($"Failed to get highscore: {error?.GetMessage()}")
+            ));
             
             // Show panel
             if (highscorePanel != null)
@@ -304,21 +333,31 @@ namespace LuneRun
             RepositionPanel();
         }
         
-        private void OnHighscoreReceived(List<HighscoreEntry> entries)
+        private void OnHighscoreReceived(Highscore highscore)
         {
-            if (entries == null) return;
+            if (highscore == null) return;
+            
+            List<Score> scores = highscore.GetScores();
+            if (scores == null) return;
             
             // Populate entries
-            for (int i = 0; i < entries.Count; i++)
+            for (int i = 0; i < scores.Count; i++)
             {
                 if (i >= 10) break; // Show top 10 only
                 
-                HighscoreEntry entry = entries[i];
+                Score score = scores[i];
+                // Convert Score to HighscoreEntry
+                HighscoreEntry entry = new HighscoreEntry(
+                    i + 1,
+                    score.GetUserName() ?? "Unknown",
+                    (float)score.GetScore(),
+                    DateTime.Now // Score doesn't have date, use current
+                );
                 CreateEntryUI(entry, i + 1);
             }
             
             // If no entries, show "No scores yet" message
-            if (entries.Count == 0)
+            if (scores.Count == 0)
             {
                 CreateEmptyEntryUI();
             }
@@ -361,6 +400,29 @@ namespace LuneRun
                 texts[0].text = "";
                 texts[1].text = "No scores yet";
                 texts[2].text = "";
+            }
+        }
+        
+        // Nested class to implement IGetHighscoreCallback
+        private class GetHighscoreCallback : IGetHighscoreCallback
+        {
+            private Action<Highscore> _onSuccess;
+            private Action<ErrorResponse> _onError;
+            
+            public GetHighscoreCallback(Action<Highscore> onSuccess, Action<ErrorResponse> onError)
+            {
+                _onSuccess = onSuccess;
+                _onError = onError;
+            }
+            
+            public void GetHighscore(Highscore highscore)
+            {
+                _onSuccess?.Invoke(highscore);
+            }
+            
+            public void GetHighscoreError(ErrorResponse error)
+            {
+                _onError?.Invoke(error);
             }
         }
         
@@ -415,7 +477,7 @@ namespace LuneRun
         // Submit a new score
         public void SubmitScore(int levelId, float score, IRunnerApi runnerApi, Action<bool> callback)
         {
-            runnerApi.SubmitScore(levelId, score, callback);
+            runnerApi.Score(levelId, (double)score, new ScoreCallback(callback));
         }
         
         // Get local highscore for a level
@@ -430,6 +492,29 @@ namespace LuneRun
             PlayerPrefs.SetFloat($"Highscore_{levelId}", score);
             PlayerPrefs.Save();
         }
+
+        // Nested class to implement IScoreCallback
+        private class ScoreCallback : IScoreCallback
+        {
+            private Action<bool> _callback;
+            
+            public ScoreCallback(Action<bool> callback)
+            {
+                _callback = callback;
+            }
+            
+            public void Score(Score score, bool isNewHighscore)
+            {
+                _callback?.Invoke(true); // success
+            }
+            
+            public void ScoreError(ErrorResponse error)
+            {
+                Debug.LogError($"Score submission error: {error?.GetMessage()}");
+                _callback?.Invoke(false); // failure
+            }
+        }
+
     }
     
     // Extended IRunnerApi interface for highscore operations

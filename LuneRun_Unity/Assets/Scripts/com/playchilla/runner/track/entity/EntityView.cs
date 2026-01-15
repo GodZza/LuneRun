@@ -9,7 +9,7 @@ namespace com.playchilla.runner.track.entity
         private SmoothPos3 _smoothPos;
         protected RunnerEntity _entity;
 
-        public void Initialize(RunnerEntity entity)
+        public virtual void Initialize(RunnerEntity entity)
         {
             _entity = entity;
             _smoothPos = new SmoothPos3(entity.GetPos());

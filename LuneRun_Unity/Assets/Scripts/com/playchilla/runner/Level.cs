@@ -4,6 +4,8 @@ using com.playchilla.runner.player;
 using com.playchilla.runner.track;
 using com.playchilla.gameapi.api;
 using shared.input;
+using com.playchilla.runner.track.entity;
+using shared.math;
 
 namespace com.playchilla.runner
 {
@@ -13,8 +15,8 @@ namespace com.playchilla.runner
         private bool _isHardware;
         private Player _player;
         private Materials _materials;
-        private object _gameCont; // Placeholder for game container
-        private object _world; // Placeholder for World instance
+        private GameObject _gameCont; // Placeholder for game container
+        private World _world; // World instance
         private PlayerView _playerView;
         private Track _track;
         
@@ -22,7 +24,34 @@ namespace com.playchilla.runner
         {
             _levelId = levelId;
             _isHardware = isHardware;
-            // Initialize other components as needed
+            
+            // Create game container if not exists
+            if (_gameCont == null)
+            {
+                _gameCont = new GameObject("GameContainer");
+                _gameCont.transform.SetParent(transform);
+            }
+            
+            // Create world instance
+            _world = new World(this, _gameCont);
+            
+            // Add some test entities (speed entities) for demonstration
+            // This should be replaced with proper entity generation based on level design
+            AddTestEntities();
+            
+            Debug.Log($"[Level] Initialized level {levelId} with world");
+        }
+        
+        private void AddTestEntities()
+        {
+            // Add a few speed entities along the track for testing
+            for (int i = 0; i < 5; i++)
+            {
+                Vec3 position = new Vec3(0, 5, 10 + i * 20); // Position along Z axis
+                SpeedEntity speedEntity = new SpeedEntity(position, this, null); // Segment is null for now
+                _world.AddEntity(speedEntity);
+            }
+            Debug.Log("[Level] Added test entities");
         }
         
         public Player GetPlayer()
@@ -40,9 +69,14 @@ namespace com.playchilla.runner
             return _materials;
         }
         
-        public object GetGameCont()
+        public GameObject GetGameCont()
         {
             return _gameCont;
+        }
+        
+        public World GetWorld()
+        {
+            return _world;
         }
         
         // IScoreCallback implementation (stubs)
@@ -97,6 +131,18 @@ namespace com.playchilla.runner
         public Track getTrack()
         {
             return _track;
+        }
+
+        private void Update()
+        {
+            if (_world != null)
+            {
+                // Convert delta time to milliseconds (original game uses integer ticks)
+                int deltaTime = Mathf.RoundToInt(Time.deltaTime * 1000);
+                _world.Tick(deltaTime);
+                // Render with interpolation (simplified - no interpolation for now)
+                _world.Render(deltaTime, 0f);
+            }
         }
 
     }

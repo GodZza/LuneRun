@@ -1,5 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
+using com.playchilla.runner.api;
+using com.playchilla.gameapi.api;
+using com.playchilla.runner.player;
 
 namespace LuneRun
 {
@@ -33,7 +36,7 @@ namespace LuneRun
             IRunnerApi runnerApi;
             if (useLocalRunnerApi)
             {
-                runnerApi = new LocalRunnerApi();
+                runnerApi = new LocalRunnerApi(new ApiUser(1, "Local"));
                 Debug.Log("[LuneRun] Using LocalRunnerApi");
             }
             else
