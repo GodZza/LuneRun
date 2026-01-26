@@ -38,6 +38,8 @@ namespace com.playchilla.runner.player
             _mouse = mouse;
             _pos = startPos.clone();
             _startPos = startPos.clone();
+            _vel = new Vec3(0, 0, 0); // Initialize velocity
+            _speed = 0; // Initialize speed
             _track = level.GetTrack();
             _world = level.GetWorld();
             // Initialize breath sound placeholder
@@ -105,6 +107,19 @@ namespace com.playchilla.runner.player
         
         internal void _setWantedVelOnGround(bool arg1, bool arg2)
         {
+            if (_currentPart == null)
+            {
+                // Default behavior if no current part
+                _speed = 0;
+                _vel.copy(new Vec3(0, 0, 1)); // Default forward direction
+                if (arg2)
+                {
+                    _vel.y = _vel.y + 4;
+                    _onJump();
+                }
+                return;
+            }
+
             _speed = _vel.dot(_currentPart.dir);
             _vel.copy(_currentPart.dir.scale(_speed));
             if (arg1)
@@ -171,6 +186,8 @@ namespace com.playchilla.runner.player
         
         internal void _entityInteraction()
         {
+            if (_world == null) return; // Safety check
+
             RunnerEntity closest = _world.GetClosestEntity(_pos, 1);
             if (closest is SpeedEntity)
             {
@@ -192,10 +209,15 @@ namespace com.playchilla.runner.player
                 return;
             }
             loc1.normalizeSelf();
-            double loc2 = System.Math.Abs(loc1.dot(_currentPart.normal));
-            if (_listener != null)
+
+            // Check if currentPart is available
+            if (_currentPart != null)
             {
-                _listener.onLand(loc2);
+                double loc2 = System.Math.Abs(loc1.dot(_currentPart.normal));
+                if (_listener != null)
+                {
+                    _listener.onLand(loc2);
+                }
             }
         }
         

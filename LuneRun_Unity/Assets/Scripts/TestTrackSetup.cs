@@ -2,6 +2,9 @@ using UnityEngine;
 using System.Reflection;
 using com.playchilla.runner.player;
 using com.playchilla.runner;
+using com.playchilla.runner.api;
+using com.playchilla.runner.track;
+using shared.math;
 
 namespace LuneRun
 {
@@ -25,30 +28,45 @@ namespace LuneRun
         private PlayerController playerController;
         private TrackGenerator trackGenerator;
         private Camera mainCamera;
+        private Level level;
+        private Player player;
+        private com.playchilla.runner.player.PlayerView playerView;
+        private com.playchilla.runner.track.Track flashTrack;
         
         void Start()
         {
             Debug.Log("=== LuneRun 核心玩法测试场景 ===");
             Debug.Log("开始设置测试轨道场景...");
-            
+
             // 确保主相机存在
             SetupCamera();
-            
+
+            // 创建 Flash Track
+            flashTrack = new com.playchilla.runner.track.Track();
+
             // 创建轨道生成器
             CreateTrackGenerator();
-            
-            // 创建玩家
+
+            // 创建 Level（管理游戏世界和实体）
+            // Level 内部会创建 Player 和 PlayerView
+            CreateLevel();
+
+            // 创建 PlayerController（Unity 物理）
             CreatePlayer();
-            
+
+            // 获取 Level 内部的 Player 和 PlayerView
+            player = level.GetPlayer();
+            playerView = level.GetPlayerView();
+
             // 生成测试轨道
             GenerateTestTrack();
-            
+
             // 定位相机
             PositionCamera();
-            
+
             // 调试：检查玩家脚下是否有轨道
             CheckGroundDebug();
-            
+
             Debug.Log("测试轨道场景设置完成！");
             Debug.Log("操作说明：");
             Debug.Log("- 按住 SPACE 键：加速奔跑");
@@ -84,6 +102,31 @@ namespace LuneRun
             }
         }
         
+        void CreateLevel()
+        {
+            // 创建 Level 对象（Flash 兼容）
+            GameObject levelObj = new GameObject("Level");
+            level = levelObj.AddComponent<Level>();
+            
+            // 初始化 Level
+            Settings settings = null;
+            try
+            {
+                settings = Settings.Load();
+            }
+            catch
+            {
+                settings = new Settings(Constants.Version, true, true, false);
+            }
+            
+            // 简化的 API 实现用于测试
+            IRunnerApi runnerApi = null; // 测试模式下不需要真实 API
+            
+            level.Initialize(testLevelId, false, settings, runnerApi);
+            
+            Debug.Log("创建了 Level 对象");
+        }
+        
         void CreateTrackGenerator()
         {
             GameObject trackGenObj = new GameObject("TrackGenerator");
@@ -100,25 +143,30 @@ namespace LuneRun
         
         void CreatePlayer()
         {
+            // 创建 PlayerController（Unity 物理）
             GameObject playerObj = new GameObject("Player");
             playerController = playerObj.AddComponent<PlayerController>();
             
             // 创建默认设置
-            // 如果Settings类有静态Load方法，可以使用
             Settings settings = null;
             try
             {
-                // 尝试加载设置
                 settings = Settings.Load();
             }
             catch
             {
-                // 如果失败，创建默认设置
                 settings = new Settings(Constants.Version, true, true, false);
             }
             
             playerController.Initialize(settings);
             playerController.transform.position = playerStartPosition;
+            
+            // 设置轨道生成器引用（重要：用于碰撞检测）
+            playerController.SetTrackGenerator(trackGenerator);
+            playerController.SetWorld(level.GetWorld());
+            
+            // 创建 Flash Player 实例（用于 PlayerView 手臂动画）
+            player = level.GetPlayer();
             
             Debug.Log("创建了玩家角色");
             Debug.Log($"初始位置: {playerStartPosition}");
@@ -252,6 +300,40 @@ namespace LuneRun
             {
                 Debug.LogError("PlayerController 为空！");
                 return;
+            }
+            
+            // 同步 PlayerController 状态到 Flash Player（用于手臂动画）
+            if (player != null && playerController != null)
+            {
+                // 更新位置
+                Vector3 controllerPos = playerController.transform.position;
+                player.SetPosition(new Vec3(controllerPos.x, controllerPos.y, controllerPos.z));
+                
+                // 更新速度
+                Vector3 controllerVel = playerController.GetForwardDir() * playerController.GetSpeed();
+                player.SetVelocity(new Vec3(controllerVel.x, controllerVel.y, controllerVel.z));
+                
+                // 更新地面状态
+                player.SetOnGround(playerController.IsOnGround());
+                
+                // 更新当前 Part
+                if (flashTrack != null)
+                {
+                    com.playchilla.runner.track.Part closestPart = flashTrack.GetClosestPart(
+                        new Vec3(controllerPos.x, controllerPos.y, controllerPos.z));
+                    if (closestPart != null)
+                    {
+                        player.SetCurrentPart(closestPart);
+                    }
+                }
+            }
+            
+            // 更新 PlayerView（手臂动画）
+            if (playerView != null)
+            {
+                int currentTime = (int)(Time.time * 1000); // 转换为毫秒
+                float alpha = Time.deltaTime;
+                playerView.Render(currentTime, alpha);
             }
             
             // 简单的相机跟随

@@ -46,10 +46,20 @@ namespace com.playchilla.runner.track.entity
             _entityGrid.Add(entity);
             if (entity is SpeedEntity speedEntity)
             {
-                var view = new SpeedView(entity, _level);
-                // Instantiate GameObject and attach view component
-                // For now, just add to list
+                // Create GameObject for the entity view
+                GameObject viewObj = new GameObject($"SpeedView_{entity.GetHashCode()}");
+                viewObj.transform.SetParent(_gameCont.transform);
+                
+                // Add SpeedView component (Unity-compatible way)
+                SpeedView view = viewObj.AddComponent<SpeedView>();
+                
+                // Initialize the view with entity and level
+                view.Initialize(entity, _level);
+                
+                // Add to views list
                 _views.Add(view);
+                
+                Debug.Log($"[World] Added SpeedView for entity at {entity.GetPos()}");
             }
         }
 

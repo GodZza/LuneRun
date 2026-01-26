@@ -34,21 +34,24 @@ namespace com.playchilla.runner
             
             // Create materials instance
             _materials = new Materials();
-            
+
+            // Create world instance (must be created before player initialization)
+            _world = new World(this, _gameCont);
+
             // Create input instances
             KeyboardInput keyboard = new KeyboardInput();
             MouseInput mouse = new MouseInput();
-            
+
             // Create player instance
             GameObject playerObj = new GameObject("Player");
             playerObj.transform.SetParent(_gameCont.transform);
             _player = playerObj.AddComponent<Player>();
             Vec3 startPos = new Vec3(0, 2, 0);
             _player.Initialize(this, keyboard, mouse, startPos);
-            
+
             // Create track instance (simplified)
             _track = new Track();
-            
+
             // Get main camera
             Camera mainCamera = Camera.main;
             if (mainCamera == null)
@@ -58,16 +61,13 @@ namespace com.playchilla.runner
                 mainCamera = cameraObj.AddComponent<Camera>();
                 cameraObj.tag = "MainCamera";
             }
-            
+
             // Create player view instance with complete arm system
             GameObject playerViewObj = new GameObject("PlayerView");
             playerViewObj.transform.SetParent(_gameCont.transform);
             _playerView = playerViewObj.AddComponent<PlayerView>();
             Debug.Log($"[Level] Created PlayerView, initializing with player={_player != null}, camera={mainCamera != null}, materials={_materials != null}");
             _playerView.Initialize(this, _player, mainCamera, _materials, keyboard);
-            
-            // Create world instance
-            _world = new World(this, _gameCont);
             
             // Add some test entities (speed entities) for demonstration
             // This should be replaced with proper entity generation based on level design

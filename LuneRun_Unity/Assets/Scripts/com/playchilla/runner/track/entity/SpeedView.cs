@@ -6,13 +6,19 @@ namespace com.playchilla.runner.track.entity
     public class SpeedView : EntityView
     {
         private GameObject visualObject;
+        private Level level;
         
-        public SpeedView(RunnerEntity entity, Level level)
+        // Unity-compatible constructor (no parameters)
+        public SpeedView() : base()
         {
-            // In Unity, we would instantiate a GameObject with a Sphere mesh and material
-            // For now, just initialize base
-            Initialize(entity);
-            // TODO: Set up visual representation
+            // Initialize in Awake or via Initialize method
+        }
+        
+        public void Initialize(RunnerEntity entity, Level levelRef)
+        {
+            level = levelRef;
+            base.Initialize(entity);
+            CreateVisual();
         }
         
         public override void Initialize(RunnerEntity entity)
