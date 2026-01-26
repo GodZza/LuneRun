@@ -186,9 +186,10 @@ namespace LuneRun
                     if (i + 1 < flashSegments.Count)
                     {
                         flashSegments[i].SetNextSegment(flashSegments[i + 1]);
-                        flashTrack.AddSegment(flashSegments[i]);
                     }
+                    flashTrack.AddSegment(flashSegments[i]);
                 }
+                Debug.Log($"Added {flashSegments.Count} segments to Flash track");
             }
             
             Debug.Log($"Generated track with {segments.Count} segments for level {levelId}");

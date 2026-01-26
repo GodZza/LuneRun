@@ -61,6 +61,13 @@ namespace LuneRun
             // 生成测试轨道
             GenerateTestTrack();
 
+            // 设置Level使用生成的Flash Track
+            if (level != null && flashTrack != null)
+            {
+                level.SetTrack(flashTrack);
+                Debug.Log($"[TestTrackSetup] Set flash track to level");
+            }
+
             // 定位相机
             PositionCamera();
 
@@ -143,10 +150,10 @@ namespace LuneRun
         
         void CreatePlayer()
         {
-            // 创建 PlayerController（Unity 物理）
+            // 创建 PlayerController（仅作为视觉容器，物理由 Flash Player 处理）
             GameObject playerObj = new GameObject("Player");
             playerController = playerObj.AddComponent<PlayerController>();
-            
+
             // 创建默认设置
             Settings settings = null;
             try
@@ -157,18 +164,17 @@ namespace LuneRun
             {
                 settings = new Settings(Constants.Version, true, true, false);
             }
-            
+
             playerController.Initialize(settings);
             playerController.transform.position = playerStartPosition;
-            
-            // 设置轨道生成器引用（重要：用于碰撞检测）
-            playerController.SetTrackGenerator(trackGenerator);
-            playerController.SetWorld(level.GetWorld());
-            
-            // 创建 Flash Player 实例（用于 PlayerView 手臂动画）
+
+            // 注意：不需要设置 trackGenerator 和 world，因为物理由 Flash Player 处理
+            // PlayerController 只作为视觉容器，不处理物理
+
+            // 创建 Flash Player 实例（物理和手臂动画都由它处理）
             player = level.GetPlayer();
-            
-            Debug.Log("创建了玩家角色");
+
+            Debug.Log("创建了玩家角色（Flash 物理系统）");
             Debug.Log($"初始位置: {playerStartPosition}");
         }
         
@@ -176,18 +182,16 @@ namespace LuneRun
         {
             if (trackGenerator != null)
             {
-                // 创建Flash Track（用于Player的Part获取）
-                var flashTrack = new com.playchilla.runner.track.Track();
-                
+                // 使用TestTrackSetup的flashTrack字段，而不是创建新的
                 // 调用TrackGenerator的GenerateTrack方法，传递Flash Track
                 trackGenerator.GenerateTrack(testLevelId, flashTrack);
-                
+
                 Debug.Log($"生成了测试轨道，关卡ID: {testLevelId}");
-                
+
                 // 显示轨道总长度
                 float totalLength = trackGenerator.GetTotalLength();
                 Debug.Log($"轨道总长度: {totalLength} 单位");
-                
+
                 // 在轨道起点和终点放置标记
                 if (showDebugMarkers)
                 {
@@ -290,79 +294,65 @@ namespace LuneRun
                 bool spaceReleased = Input.GetKeyUp(KeyCode.Space);
                 Debug.Log($"输入状态: Space按住={spaceDown}, 按下={spacePressed}, 松开={spaceReleased}");
             }
-            
-            // 更新玩家控制器（核心玩法循环）
-            if (playerController != null)
+
+            // Flash physics system: Player handles physics internally
+            // PlayerController is only used as visual container
+            if (player != null)
             {
-                playerController.UpdatePlayer();
-            }
-            else
-            {
-                Debug.LogError("PlayerController 为空！");
-                return;
-            }
-            
-            // 同步 PlayerController 状态到 Flash Player（用于手臂动画）
-            if (player != null && playerController != null)
-            {
-                // 更新位置
-                Vector3 controllerPos = playerController.transform.position;
-                player.SetPosition(new Vec3(controllerPos.x, controllerPos.y, controllerPos.z));
-                
-                // 更新速度
-                Vector3 controllerVel = playerController.GetForwardDir() * playerController.GetSpeed();
-                player.SetVelocity(new Vec3(controllerVel.x, controllerVel.y, controllerVel.z));
-                
-                // 更新地面状态
-                player.SetOnGround(playerController.IsOnGround());
-                
-                // 更新当前 Part
-                if (flashTrack != null)
+                // Get current position from Flash Player
+                Vec3 flashPos = player.GetPos();
+
+                // Sync PlayerController position to Flash Player position (for visualization)
+                if (playerController != null)
                 {
-                    com.playchilla.runner.track.Part closestPart = flashTrack.GetClosestPart(
-                        new Vec3(controllerPos.x, controllerPos.y, controllerPos.z));
-                    if (closestPart != null)
-                    {
-                        player.SetCurrentPart(closestPart);
-                    }
+                    playerController.transform.position = new Vector3(
+                        (float)flashPos.x,
+                        (float)flashPos.y,
+                        (float)flashPos.z
+                    );
                 }
             }
-            
-            // 更新 PlayerView（手臂动画）
-            if (playerView != null)
+
+            // Update PlayerView (arm animation) - should follow PlayerController
+            if (playerView != null && playerController != null)
             {
+                playerView.transform.position = playerController.transform.position;
                 int currentTime = (int)(Time.time * 1000); // 转换为毫秒
                 float alpha = Time.deltaTime;
                 playerView.Render(currentTime, alpha);
             }
-            
-            // 简单的相机跟随
-            if (mainCamera != null && playerController != null)
+
+            // Simple camera follow
+            if (mainCamera != null && player != null)
             {
-                Vector3 targetPosition = playerController.transform.position + new Vector3(0, cameraHeight, -cameraDistance);
+                Vec3 flashPos = player.GetPos();
+                Vector3 targetPosition = new Vector3((float)flashPos.x, (float)flashPos.y, (float)flashPos.z)
+                    + new Vector3(0, cameraHeight, -cameraDistance);
                 mainCamera.transform.position = Vector3.Lerp(mainCamera.transform.position, targetPosition, Time.deltaTime * 3f);
+                mainCamera.transform.LookAt(new Vector3((float)flashPos.x, (float)flashPos.y, (float)flashPos.z));
             }
-            
-            // 调试控制
+
+            // Debug controls
             if (Input.GetKeyDown(KeyCode.R))
             {
                 Debug.Log("重新启动场景...");
                 UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
             }
-            
+
             if (Input.GetKeyDown(KeyCode.H))
             {
                 Debug.Log("显示帮助信息");
                 Debug.Log("SPACE: 奔跑/跳跃, F3: 性能面板, F11: 全屏, R: 重启, H: 帮助");
             }
-            
-            // 显示玩家状态
-            if (playerController != null)
+
+            // Display player status
+            if (player != null)
             {
-                // 每30帧显示一次状态
+                // Every 30 frames display status
                 if (Time.frameCount % 30 == 0)
                 {
-                    Debug.Log($"玩家状态: 速度={playerController.GetSpeed():F2}, 地面={playerController.IsOnGround()}, 位置={playerController.transform.position:F1}");
+                    Vec3 pos = player.GetPos();
+                    Debug.Log($"玩家状态: 速度={player.GetSpeed():F2}, 地面={player.IsOnGround()}, 位置=({pos.x:F1}, {pos.y:F1}, {pos.z:F1})");
                 }
             }
         }

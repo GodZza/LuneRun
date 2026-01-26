@@ -43,15 +43,20 @@ namespace com.playchilla.runner.track
         public Part GetClosestPart(shared.math.Vec3 position)
         {
             if (_segments.Count == 0)
+            {
+                Debug.LogWarning($"[Track.GetClosestPart] No segments in track");
                 return null;
+            }
 
             Part closest = null;
             double minDistSqr = double.MaxValue;
+            int totalParts = 0;
 
             foreach (Segment segment in _segments)
             {
                 foreach (Part part in segment.GetParts())
                 {
+                    totalParts++;
                     double distSqr = position.distanceSqr(part.pos);
                     if (distSqr < minDistSqr)
                     {
@@ -59,6 +64,11 @@ namespace com.playchilla.runner.track
                         closest = part;
                     }
                 }
+            }
+
+            if (Time.frameCount % 30 == 0)
+            {
+                Debug.Log($"[Track.GetClosestPart] segments={_segments.Count}, totalParts={totalParts}, closest={(closest != null ? $"pos=({closest.pos.x:F2}, {closest.pos.y:F2}, {closest.pos.z:F2}), dist={System.Math.Sqrt(minDistSqr):F2}" : "null")}");
             }
 
             return closest;

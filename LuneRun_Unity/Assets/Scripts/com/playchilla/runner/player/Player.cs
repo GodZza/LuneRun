@@ -60,22 +60,21 @@ namespace com.playchilla.runner.player
         public Vec3 GetForwardDir() => _vel;
         
         // Main update method called each frame (or tick)
+        // In Unity test mode, physics is handled by PlayerController
+        // This method is only used for arm animation state
         public void Tick(int deltaTime)
         {
-            if (_track != null)
+            // Debug: Show current position and state
+            if (Time.frameCount % 30 == 0)
             {
-                if (_currentPart == null)
-                {
-                    _currentPart = _track.GetClosestPart(_pos);
-                }
+                Debug.Log($"[Player.Tick] pos=({_pos.x:F2}, {_pos.y:F2}, {_pos.z:F2}), vel=({_vel.x:F2}, {_vel.y:F2}, {_vel.z:F2}), _onGround={_onGround}, _currentPart={(_currentPart != null ? "found" : "null")}");
             }
+
+            // Flash physics system - restore full physics calculation
             _setWantedSpeeds();
             _clip();
             _entityInteraction();
-            if (_pos.y < 1)
-            {
-                _dead = true;
-            }
+
             if (_onGround)
             {
                 if (_breathOn && Random.value > 0.99)
@@ -162,25 +161,74 @@ namespace com.playchilla.runner.player
         
         internal void _clip()
         {
-            // Simplified collision detection using Unity's CharacterController
-            // In original Flash, this used track.getClosestPart() and surface detection
-            // For now, we'll rely on the CharacterController component attached to the GameObject
-            // The actual ground detection will be handled by Unity's physics
-            
-            // This method should update _onGround based on collision detection
-            // For simplicity, we'll assume the CharacterController handles ground detection
-            // and we'll read it from the controller in the UpdatePlayer method of PlayerController
-            
-            // Position is now synchronized from PlayerController, so we don't update it here
-            // Placeholder: update position based on velocity (if not using CharacterController)
-            if (_onGround)
+            // Flash physics system: use track.getClosestPart() for collision detection
+            Vec3 loc1 = _pos.add(_vel);
+            Part loc2 = _track.GetClosestPart(loc1);
+
+            if (loc2 != null)
             {
-                // Stick to surface (simplified)
-                // In original: _pos.copy(loc5); where loc5 is surface point
+                // Calculate distance to surface using dot product with normal
+                Vec3 offset = loc1.sub(loc2.pos);
+                double distanceToSurface = offset.dot(loc2.normal);
+
+                // Calculate horizontal distance to part center
+                Vec3 horizontalOffset = offset.clone();
+                horizontalOffset.y = 0;
+                double horizontalDist = horizontalOffset.length();
+
+                // Debug output
+                if (Time.frameCount % 30 == 0)
+                {
+                    Debug.Log($"[Player._clip] loc1=({loc1.x:F2}, {loc1.y:F2}, {loc1.z:F2}), loc2.pos=({loc2.pos.x:F2}, {loc2.pos.y:F2}, {loc2.pos.z:F2}), distanceToSurface={distanceToSurface:F2}, horizontalDist={horizontalDist:F2}");
+                }
+
+                // Ground detection: player is within vertical and horizontal bounds of the part
+                // Vertical: between -1 and 2 units above/below surface
+                // Horizontal: within 3 units of part center
+                bool loc6 = distanceToSurface >= -1 && distanceToSurface < 3 && horizontalDist < 3;
+
+                if (loc6)
+                {
+                    _currentPart = loc2;
+                }
+
+                if (!_onGround && loc6)
+                {
+                    _onLand();
+                    Debug.Log($"[Player._clip] Player landed! distanceToSurface={distanceToSurface:F2}");
+                }
+
+                _onGround = loc6;
+
+                if (_onGround)
+                {
+                    // Stick to surface
+                    _pos.copy(loc2.pos);
+                    _pos.y += 0.1f; // Slight offset above surface
+
+                    // Edge constraint: keep player within track bounds
+                    Vec3 loc7 = _currentPart.GetPos();
+                    Vec3 loc8 = _pos.sub(loc7);
+                    // Use direction as proxy for right (perpendicular to forward and up)
+                    Vec3 right = new Vec3(-loc2.dir.z, 0, loc2.dir.x);
+                    double loc9 = loc8.dot(right);
+                    if (System.Math.Abs(loc9) > 2)
+                    {
+                        Vec3 offsetConstraint = right.rescale(loc9 > 0 ? -0.4 : 0.4);
+                        _pos.addSelf(offsetConstraint);
+                    }
+                }
+                else
+                {
+                    // Free fall in air
+                    _pos.addSelf(_vel);
+                }
             }
             else
             {
-                // _pos.addSelf(_vel); // Disabled - position synchronized from PlayerController
+                // No track found, free fall
+                Debug.LogWarning($"[Player._clip] No closest part found at pos=({loc1.x:F2}, {loc1.y:F2}, {loc1.z:F2})");
+                _pos.addSelf(_vel);
             }
         }
         
@@ -232,7 +280,13 @@ namespace com.playchilla.runner.player
         // Helper methods for external access
         public void SetPosition(Vec3 pos) { _pos.copy(pos); }
         public void SetVelocity(Vec3 vel) { _vel.copy(vel); }
+
+        // Set ground state externally (from PlayerController)
         public void SetOnGround(bool onGround) { _onGround = onGround; }
+
+        // Set velocity magnitude for arm animation speed calculation
+        public void SetSpeed(double speed) { _speed = speed; }
+
         public void SetCurrentPart(Part part) { _currentPart = part; }
     }
 }

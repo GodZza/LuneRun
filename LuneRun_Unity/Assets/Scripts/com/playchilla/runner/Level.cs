@@ -19,6 +19,7 @@ namespace com.playchilla.runner
         private World _world; // World instance
         private PlayerView _playerView;
         private Track _track;
+        private KeyboardInput _keyboardInput; // Reference for input synchronization
         
         public void Initialize(int levelId, bool isHardware, Settings settings, IRunnerApi runnerApi)
         {
@@ -35,6 +36,9 @@ namespace com.playchilla.runner
             // Create materials instance
             _materials = new Materials();
 
+            // Create track instance BEFORE player (player needs it)
+            _track = new Track();
+            
             // Create world instance (must be created before player initialization)
             _world = new World(this, _gameCont);
 
@@ -42,15 +46,16 @@ namespace com.playchilla.runner
             KeyboardInput keyboard = new KeyboardInput();
             MouseInput mouse = new MouseInput();
 
-            // Create player instance
+            // Save keyboard reference for input synchronization
+            _keyboardInput = keyboard;
+
+            // Create player instance (now track is available)
             GameObject playerObj = new GameObject("Player");
             playerObj.transform.SetParent(_gameCont.transform);
             _player = playerObj.AddComponent<Player>();
-            Vec3 startPos = new Vec3(0, 2, 0);
+            Vec3 startPos = new Vec3(0, 1, 0); // Start 1 unit above track (was 2, too high)
             _player.Initialize(this, keyboard, mouse, startPos);
-
-            // Create track instance (simplified)
-            _track = new Track();
+            Debug.Log($"[Level] Player initialized at position: ({startPos.x}, {startPos.y}, {startPos.z})");
 
             // Get main camera
             Camera mainCamera = Camera.main;
@@ -71,7 +76,8 @@ namespace com.playchilla.runner
             
             // Add some test entities (speed entities) for demonstration
             // This should be replaced with proper entity generation based on level design
-            AddTestEntities();
+            // Disabled for now - causing visual clutter
+            // AddTestEntities();
             
             Debug.Log($"[Level] Initialized level {levelId} with world, player, and complete arm system");
         }
@@ -167,28 +173,55 @@ namespace com.playchilla.runner
             return _track;
         }
 
+        // Set track externally (for when track is created after Level)
+        public void SetTrack(Track track)
+        {
+            _track = track;
+            Debug.Log($"[Level] Track set with {track.GetSegments().Count} segments");
+        }
+
         private void Update()
         {
             // Convert delta time to milliseconds (original game uses integer ticks)
             int deltaTime = Mathf.RoundToInt(Time.deltaTime * 1000);
-            
+
+            // Update keyboard input from Unity
+            UpdateKeyboardInput();
+
             if (_player != null)
             {
                 _player.Tick(deltaTime);
             }
-            
+
             if (_world != null)
             {
                 _world.Tick(deltaTime);
                 // Render with interpolation (simplified - no interpolation for now)
                 _world.Render(deltaTime, 0f);
-                
+
                 // Update player view with complete arm system
                 if (_playerView != null)
                 {
                     int currentTime = (int)(Time.time * 1000);
                     _playerView.Render(currentTime, 0.0);
                 }
+            }
+        }
+
+        private void UpdateKeyboardInput()
+        {
+            // Clear previous frame's pressed/released state
+            _keyboardInput.Reset();
+
+            // Synchronize Unity Input with Flash KeyboardInput
+            // Space key (code 32 in Flash/Air)
+            if (Input.GetKey(KeyCode.Space))
+            {
+                _keyboardInput.SetPress(32);
+            }
+            if (Input.GetKeyUp(KeyCode.Space))
+            {
+                _keyboardInput.SetRelease(32);
             }
         }
 
