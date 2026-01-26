@@ -145,9 +145,23 @@ namespace LuneRun
                 // Create Flash-compatible Segment and add parts
                 if (flashTrack != null)
                 {
-                    // Create a Flash Segment
-                    Part connectPart = i == 0 ? new Part(null, new Vec3(currentPosition.x, currentPosition.y, currentPosition.z), 
-                        new Vec3(0, 0, 1), new Vec3(0, 1, 0), null, 0, 0) : null;
+                    // For first segment, create initial connect part at start
+                    Part connectPart = null;
+                    if (i == 0)
+                    {
+                        connectPart = new Part(null, 
+                            new Vec3(currentPosition.x, currentPosition.y, currentPosition.z),
+                            new Vec3(0, 0, 1), 
+                            new Vec3(0, 1, 0), 
+                            null, 0, 0);
+                    }
+                    else if (flashSegments.Count > 0)
+                    {
+                        // Use last part from previous segment as connect part
+                        com.playchilla.runner.track.segment.Segment prevSegment = flashSegments[flashSegments.Count - 1];
+                        connectPart = prevSegment.GetLastPart();
+                    }
+                    
                     com.playchilla.runner.track.segment.Segment flashSegment = new com.playchilla.runner.track.segment.Segment(connectPart, "Segment_" + i, levelId);
                     
                     // Add all parts from Unity segment to Flash segment
