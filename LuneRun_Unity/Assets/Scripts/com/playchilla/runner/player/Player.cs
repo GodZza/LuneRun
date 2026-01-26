@@ -60,9 +60,12 @@ namespace com.playchilla.runner.player
         // Main update method called each frame (or tick)
         public void Tick(int deltaTime)
         {
-            if (_currentPart == null)
+            if (_track != null)
             {
-                _currentPart = _track.GetClosestPart(_pos);
+                if (_currentPart == null)
+                {
+                    _currentPart = _track.GetClosestPart(_pos);
+                }
             }
             _setWantedSpeeds();
             _clip();
@@ -153,6 +156,7 @@ namespace com.playchilla.runner.player
             // For simplicity, we'll assume the CharacterController handles ground detection
             // and we'll read it from the controller in the UpdatePlayer method of PlayerController
             
+            // Position is now synchronized from PlayerController, so we don't update it here
             // Placeholder: update position based on velocity (if not using CharacterController)
             if (_onGround)
             {
@@ -161,7 +165,7 @@ namespace com.playchilla.runner.player
             }
             else
             {
-                _pos.addSelf(_vel);
+                // _pos.addSelf(_vel); // Disabled - position synchronized from PlayerController
             }
         }
         

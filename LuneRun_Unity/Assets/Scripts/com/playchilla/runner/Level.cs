@@ -63,6 +63,7 @@ namespace com.playchilla.runner
             GameObject playerViewObj = new GameObject("PlayerView");
             playerViewObj.transform.SetParent(_gameCont.transform);
             _playerView = playerViewObj.AddComponent<PlayerView>();
+            Debug.Log($"[Level] Created PlayerView, initializing with player={_player != null}, camera={mainCamera != null}, materials={_materials != null}");
             _playerView.Initialize(this, _player, mainCamera, _materials, keyboard);
             
             // Create world instance
@@ -168,10 +169,16 @@ namespace com.playchilla.runner
 
         private void Update()
         {
+            // Convert delta time to milliseconds (original game uses integer ticks)
+            int deltaTime = Mathf.RoundToInt(Time.deltaTime * 1000);
+            
+            if (_player != null)
+            {
+                _player.Tick(deltaTime);
+            }
+            
             if (_world != null)
             {
-                // Convert delta time to milliseconds (original game uses integer ticks)
-                int deltaTime = Mathf.RoundToInt(Time.deltaTime * 1000);
                 _world.Tick(deltaTime);
                 // Render with interpolation (simplified - no interpolation for now)
                 _world.Render(deltaTime, 0f);

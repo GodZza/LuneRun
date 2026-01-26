@@ -7,6 +7,7 @@ using com.playchilla.runner;
 using com.playchilla.runner.track.entity;
 using com.playchilla.runner.player;
 using com.playchilla.runner.api;
+using shared.math;
 
 namespace LuneRun
 {
@@ -40,19 +41,19 @@ namespace LuneRun
             this.settings = settings;
             this.isHardware = isHardware;
             
-            // Generate track first
+            // Create level instance first (manages world and entities)
+            GameObject levelObj = new GameObject("Level");
+            level = levelObj.AddComponent<Level>();
+            level.Initialize(levelId, isHardware, settings, runnerApi);
+            
+            // Generate track with Flash track reference
             trackGenerator = GetComponent<TrackGenerator>();
             if (trackGenerator == null)
             {
                 Debug.Log("[LuneRun] Adding TrackGenerator component");
                 trackGenerator = gameObject.AddComponent<TrackGenerator>();
             }
-            trackGenerator.GenerateTrack(levelId);
-            
-            // Create level instance (manages world and entities)
-            GameObject levelObj = new GameObject("Level");
-            level = levelObj.AddComponent<Level>();
-            level.Initialize(levelId, isHardware, settings, runnerApi);
+            trackGenerator.GenerateTrack(levelId, level.GetTrack());
             
             // Create player and place on track start
             GameObject playerObj = new GameObject("Player");
@@ -85,6 +86,36 @@ namespace LuneRun
                 }
                 
                 playerController.UpdatePlayer();
+                
+                // Synchronize playerController state to Level's Player instance for arm animation
+                if (level != null)
+                {
+                    Player levelPlayer = level.GetPlayer();
+                    if (levelPlayer != null)
+                    {
+                        // Update position
+                        Vector3 controllerPos = playerController.transform.position;
+                        levelPlayer.SetPosition(new Vec3(controllerPos.x, controllerPos.y, controllerPos.z));
+                        
+                        // Update velocity
+                        Vector3 controllerVel = playerController.GetForwardDir() * playerController.GetSpeed();
+                        levelPlayer.SetVelocity(new Vec3(controllerVel.x, controllerVel.y, controllerVel.z));
+                        
+                        // Update ground state
+                        levelPlayer.SetOnGround(playerController.IsOnGround());
+                        
+                        // Update current part from track
+                        if (level.GetTrack() != null)
+                        {
+                            com.playchilla.runner.track.Part closestPart = level.GetTrack().GetClosestPart(
+                                new Vec3(controllerPos.x, controllerPos.y, controllerPos.z));
+                            if (closestPart != null)
+                            {
+                                levelPlayer.SetCurrentPart(closestPart);
+                            }
+                        }
+                    }
+                }
                 
                 // Update player distance along track (simplified using Z coordinate)
                 playerDistance = Mathf.Max(playerDistance, playerController.transform.position.z);

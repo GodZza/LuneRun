@@ -128,8 +128,11 @@ namespace LuneRun
         {
             if (trackGenerator != null)
             {
-                // 调用TrackGenerator的GenerateTrack方法
-                trackGenerator.GenerateTrack(testLevelId);
+                // 创建Flash Track（用于Player的Part获取）
+                var flashTrack = new com.playchilla.runner.track.Track();
+                
+                // 调用TrackGenerator的GenerateTrack方法，传递Flash Track
+                trackGenerator.GenerateTrack(testLevelId, flashTrack);
                 
                 Debug.Log($"生成了测试轨道，关卡ID: {testLevelId}");
                 
@@ -243,7 +246,7 @@ namespace LuneRun
             // 更新玩家控制器（核心玩法循环）
             if (playerController != null)
             {
-                playerController.Tick();
+                playerController.UpdatePlayer();
             }
             else
             {

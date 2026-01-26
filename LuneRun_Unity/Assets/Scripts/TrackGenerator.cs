@@ -1,5 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
+using com.playchilla.runner.track;
+using com.playchilla.runner.track.segment;
+using shared.math;
 
 namespace LuneRun
 {
@@ -10,7 +13,10 @@ namespace LuneRun
         public float length;
         public float slopeAngle; // in degrees
         
-        public void Initialize(Vector3 start, Vector3 end, float angle)
+        // Flash-compatible Part objects
+        public List<Part> parts = new List<Part>();
+        
+        public void Initialize(Vector3 start, Vector3 end, float angle, com.playchilla.runner.track.Track flashTrack)
         {
             startPoint = start;
             endPoint = end;
@@ -31,6 +37,42 @@ namespace LuneRun
             // Set color based on slope
             Color segmentColor = angle > 0 ? Color.red : (angle < 0 ? Color.blue : Color.gray);
             segmentVisual.GetComponent<Renderer>().material.color = segmentColor;
+            
+            // Create Flash-compatible Part objects
+            CreateParts(flashTrack);
+        }
+        
+        private void CreateParts(com.playchilla.runner.track.Track flashTrack)
+        {
+            // Number of parts per segment (approximate based on length)
+            int partsPerSegment = Mathf.CeilToInt(length);
+            
+            // Calculate direction and normal
+            Vector3 dir = (endPoint - startPoint).normalized;
+            Vector3 normal = Vector3.up;
+            
+            // Adjust normal based on slope
+            if (Mathf.Abs(slopeAngle) > 0.1f)
+            {
+                Vector3 right = Vector3.Cross(normal, dir);
+                normal = Vector3.Cross(dir, right).normalized;
+            }
+            
+            // Create parts along the segment
+            for (int i = 0; i <= partsPerSegment; i++)
+            {
+                float t = (float)i / partsPerSegment;
+                Vector3 partPos = Vector3.Lerp(startPoint, endPoint, t);
+                
+                // Create Part object for Flash compatibility
+                Vec3 posVec = new Vec3(partPos.x, partPos.y, partPos.z);
+                Vec3 dirVec = new Vec3(dir.x, dir.y, dir.z);
+                Vec3 normalVec = new Vec3(normal.x, normal.y, normal.z);
+                
+                Part part = new Part(null, posVec, dirVec, normalVec, null, i, 0);
+                part.segment = null; // Will be set by Segment.AddPart
+                parts.Add(part);
+            }
         }
     }
     
@@ -43,13 +85,17 @@ namespace LuneRun
         
         private List<TrackSegment> segments = new List<TrackSegment>();
         private Vector3 currentPosition = Vector3.zero;
+        private com.playchilla.runner.track.Track flashTrack; // Flash-compatible track
         
-        public void GenerateTrack(int levelId)
+        public void GenerateTrack(int levelId, com.playchilla.runner.track.Track existingFlashTrack = null)
         {
             ClearTrack();
             
+            // If a Flash track is provided, use it (for integration)
+            flashTrack = existingFlashTrack;
+            
             // Seed random based on level
-            Random.InitState(levelId);
+            UnityEngine.Random.InitState(levelId);
             
             // Determine number of segments: for infinite mode, generate longer track
             int numSegments = segmentsPerLevel;
@@ -59,11 +105,14 @@ namespace LuneRun
                 Debug.Log("[LuneRun] Generating infinite mode track with " + numSegments + " segments");
             }
             
+            // Create Flash-compatible segments
+            List<com.playchilla.runner.track.segment.Segment> flashSegments = new List<com.playchilla.runner.track.segment.Segment>();
+            
             // Generate segments
             for (int i = 0; i < numSegments; i++)
             {
                 // Determine slope for this segment
-                float slopeAngle = Random.Range(-maxSlopeAngle, maxSlopeAngle);
+                float slopeAngle = UnityEngine.Random.Range(-maxSlopeAngle, maxSlopeAngle);
                 
                 // Calculate end point
                 float slopeRad = slopeAngle * Mathf.Deg2Rad;
@@ -90,11 +139,42 @@ namespace LuneRun
                     segment = segmentObj.AddComponent<TrackSegment>();
                 }
                 
-                segment.Initialize(currentPosition, endPoint, slopeAngle);
+                segment.Initialize(currentPosition, endPoint, slopeAngle, flashTrack);
                 segments.Add(segment);
+                
+                // Create Flash-compatible Segment and add parts
+                if (flashTrack != null)
+                {
+                    // Create a Flash Segment
+                    Part connectPart = i == 0 ? new Part(null, new Vec3(currentPosition.x, currentPosition.y, currentPosition.z), 
+                        new Vec3(0, 0, 1), new Vec3(0, 1, 0), null, 0, 0) : null;
+                    com.playchilla.runner.track.segment.Segment flashSegment = new com.playchilla.runner.track.segment.Segment(connectPart, "Segment_" + i, levelId);
+                    
+                    // Add all parts from Unity segment to Flash segment
+                    foreach (Part part in segment.parts)
+                    {
+                        part.segment = flashSegment;
+                        flashSegment.AddPart(part);
+                    }
+                    
+                    flashSegments.Add(flashSegment);
+                }
                 
                 // Update current position for next segment
                 currentPosition = endPoint;
+            }
+            
+            // Link Flash segments together
+            if (flashTrack != null && flashSegments.Count > 0)
+            {
+                for (int i = 0; i < flashSegments.Count; i++)
+                {
+                    if (i + 1 < flashSegments.Count)
+                    {
+                        flashSegments[i].SetNextSegment(flashSegments[i + 1]);
+                        flashTrack.AddSegment(flashSegments[i]);
+                    }
+                }
             }
             
             Debug.Log($"Generated track with {segments.Count} segments for level {levelId}");

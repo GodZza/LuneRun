@@ -344,15 +344,30 @@ namespace LuneRun
                     {
                         // Player is above track, apply downward force
                         velocity.y = Mathf.Min(velocity.y, -0.5f);
+                        isGrounded = false;
                     }
                     else if (heightDiff < -groundCheckDistance)
                     {
                         // Player is below track, push upward (should not happen with proper ground detection)
                         velocity.y = Mathf.Max(velocity.y, 1f);
+                        isGrounded = false;
                     }
-                    
-                    // Update ground state based on proximity to track surface
-                    isGrounded = Mathf.Abs(heightDiff) <= groundCheckDistance;
+                    else
+                    {
+                        // Player is on track surface
+                        if (velocity.y < -0.5f)
+                        {
+                            // Landing on ground
+                            OnLand();
+                        }
+                        isGrounded = true;
+                        // Snap to surface when grounded
+                        if (isGrounded && velocity.y <= 0)
+                        {
+                            transform.position = new Vector3(transform.position.x, surfaceHeight + 0.1f, transform.position.z);
+                            velocity.y = Mathf.Max(velocity.y, -0.1f);
+                        }
+                    }
                     
                     // Update track direction based on segment orientation
                     trackDirection = (segment.endPoint - segment.startPoint).normalized;
@@ -505,6 +520,14 @@ namespace LuneRun
         public void SetListener(IPlayerListener playerListener)
         {
             listener = playerListener;
+        }
+        
+        public void SetCurrentPart(com.playchilla.runner.track.Part part)
+        {
+            // Store reference to Part for Flash compatibility
+            // In a full implementation, this would update internal state
+            // For now, we'll just store it
+            // currentPart = part; // This needs TrackSegment conversion
         }
         
         public bool HasCompleted()

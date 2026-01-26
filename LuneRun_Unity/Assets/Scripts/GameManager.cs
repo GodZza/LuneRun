@@ -57,6 +57,13 @@ namespace LuneRun
             if (Constants.SkipToGame)
             {
                 currentState = GameState.MainMenu;
+                // Directly start level 1 for testing
+                // Skip menu and prelude, go directly to game
+                selectedLevel = 1;
+                currentState = GameState.Game;
+                showPostlude = false;
+                Initialize3DView();
+                EnterGame();
             }
             else
             {

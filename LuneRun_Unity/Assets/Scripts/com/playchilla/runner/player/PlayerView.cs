@@ -56,13 +56,18 @@ namespace com.playchilla.runner.player
 
         private void CreateHandCubes()
         {
+            Debug.Log("[PlayerView] Creating hand cubes for complete arm system");
+            
             // 上臂立方体 (尺寸: 0.1, 0.1, 0.5) - 原代码使用 CubeGeometry(0.1, 0.1, 0.5)
+            // 临时放大2倍以便调试
+            float debugScale = 2.0f;
+            
             _upperArmLeft = GameObject.CreatePrimitive(PrimitiveType.Cube);
             _upperArmRight = GameObject.CreatePrimitive(PrimitiveType.Cube);
             
-            // 设置尺寸
-            _upperArmLeft.transform.localScale = new Vector3(0.1f, 0.1f, 0.5f);
-            _upperArmRight.transform.localScale = new Vector3(0.1f, 0.1f, 0.5f);
+            // 设置尺寸（临时放大）
+            _upperArmLeft.transform.localScale = new Vector3(0.1f * debugScale, 0.1f * debugScale, 0.5f * debugScale);
+            _upperArmRight.transform.localScale = new Vector3(0.1f * debugScale, 0.1f * debugScale, 0.5f * debugScale);
             
             // 设置父对象
             _upperArmLeft.transform.SetParent(transform);
@@ -70,45 +75,48 @@ namespace com.playchilla.runner.player
             
             // 初始位置（相对于玩家中心）
             // 原Flash代码：左右手臂分别位于身体两侧
-            _upperArmLeft.transform.localPosition = new Vector3(-0.3f, 1.0f, 0.2f);
-            _upperArmRight.transform.localPosition = new Vector3(0.3f, 1.0f, 0.2f);
+            _upperArmLeft.transform.localPosition = new Vector3(-0.3f * debugScale, 1.0f * debugScale, 0.2f * debugScale);
+            _upperArmRight.transform.localPosition = new Vector3(0.3f * debugScale, 1.0f * debugScale, 0.2f * debugScale);
             
             // 下臂立方体 (尺寸: 0.1, 0.1, 0.5) - 原代码同样使用 CubeGeometry(0.1, 0.1, 0.5)
             _lowerArmLeft = GameObject.CreatePrimitive(PrimitiveType.Cube);
             _lowerArmRight = GameObject.CreatePrimitive(PrimitiveType.Cube);
             
-            _lowerArmLeft.transform.localScale = new Vector3(0.1f, 0.1f, 0.5f);
-            _lowerArmRight.transform.localScale = new Vector3(0.1f, 0.1f, 0.5f);
+            _lowerArmLeft.transform.localScale = new Vector3(0.1f * debugScale, 0.1f * debugScale, 0.5f * debugScale);
+            _lowerArmRight.transform.localScale = new Vector3(0.1f * debugScale, 0.1f * debugScale, 0.5f * debugScale);
             
             _lowerArmLeft.transform.SetParent(_upperArmLeft.transform);
             _lowerArmRight.transform.SetParent(_upperArmRight.transform);
             
             // 下臂连接到上臂末端
-            _lowerArmLeft.transform.localPosition = new Vector3(0, 0, 0.25f);
-            _lowerArmRight.transform.localPosition = new Vector3(0, 0, 0.25f);
+            _lowerArmLeft.transform.localPosition = new Vector3(0, 0, 0.25f * debugScale);
+            _lowerArmRight.transform.localPosition = new Vector3(0, 0, 0.25f * debugScale);
             
             // 手指立方体 (尺寸: 0.03, 0.03, 0.15) - 原代码 CubeGeometry(0.03, 0.03, 0.15)
             _leftFingers = GameObject.CreatePrimitive(PrimitiveType.Cube);
             _rightFingers = GameObject.CreatePrimitive(PrimitiveType.Cube);
             
-            _leftFingers.transform.localScale = new Vector3(0.03f, 0.03f, 0.15f);
-            _rightFingers.transform.localScale = new Vector3(0.03f, 0.03f, 0.15f);
+            _leftFingers.transform.localScale = new Vector3(0.03f * debugScale, 0.03f * debugScale, 0.15f * debugScale);
+            _rightFingers.transform.localScale = new Vector3(0.03f * debugScale, 0.03f * debugScale, 0.15f * debugScale);
             
             _leftFingers.transform.SetParent(_lowerArmLeft.transform);
             _rightFingers.transform.SetParent(_lowerArmRight.transform);
             
             // 手指连接到下臂末端
             // 原Flash代码：away3d.tools.helpers.MeshHelper.applyPosition(this._rightFingers, 0, 0, this._fingerGeometry.depth * 0.5);
-            _leftFingers.transform.localPosition = new Vector3(0, 0, 0.25f + 0.075f);
-            _rightFingers.transform.localPosition = new Vector3(0, 0, 0.25f + 0.075f);
+            _leftFingers.transform.localPosition = new Vector3(0, 0, (0.25f + 0.075f) * debugScale);
+            _rightFingers.transform.localPosition = new Vector3(0, 0, (0.25f + 0.075f) * debugScale);
             
             // 设置材质颜色（临时，可后续替换为真实材质）
-            SetCubeColor(_upperArmLeft, Color.red);
-            SetCubeColor(_upperArmRight, Color.red);
-            SetCubeColor(_lowerArmLeft, Color.green);
-            SetCubeColor(_lowerArmRight, Color.green);
-            SetCubeColor(_leftFingers, Color.blue);
-            SetCubeColor(_rightFingers, Color.blue);
+            // 使用更鲜艳的颜色
+            SetCubeColor(_upperArmLeft, new Color(1, 0, 0, 1)); // 亮红色
+            SetCubeColor(_upperArmRight, new Color(1, 0, 0, 1)); // 亮红色
+            SetCubeColor(_lowerArmLeft, new Color(0, 1, 0, 1)); // 亮绿色
+            SetCubeColor(_lowerArmRight, new Color(0, 1, 0, 1)); // 亮绿色
+            SetCubeColor(_leftFingers, new Color(0, 0, 1, 1)); // 亮蓝色
+            SetCubeColor(_rightFingers, new Color(0, 0, 1, 1)); // 亮蓝色
+            
+            Debug.Log($"[PlayerView] Hand cubes created: upper arms={_upperArmLeft != null}/{_upperArmRight != null}, lower arms={_lowerArmLeft != null}/{_lowerArmRight != null}, fingers={_leftFingers != null}/{_rightFingers != null}");
         }
         
         private void SetCubeColor(GameObject cube, Color color)
@@ -139,6 +147,12 @@ namespace com.playchilla.runner.player
 
         public void Render(int time, double alpha)
         {
+            if (_player == null)
+            {
+                Debug.LogWarning("[PlayerView] Render: _player is null!");
+                return;
+            }
+            
             double currentTime = time + alpha;
             Vec3 smoothPosition = _smoothPos.GetPos(_player.GetPos(), time, alpha);
             transform.position = new Vector3((float)smoothPosition.x, (float)smoothPosition.y, (float)smoothPosition.z);
@@ -153,6 +167,12 @@ namespace com.playchilla.runner.player
             }
             
             _lastTime = currentTime;
+            
+            // Debug log every 60 calls
+            if (time % 6000 == 0) // approximately every 6 seconds
+            {
+                Debug.Log($"[PlayerView] Render: time={time}, pos={transform.position}, smoothPos={smoothPosition}");
+            }
         }
 
         public void RenderTick(int deltaTime)
@@ -324,6 +344,12 @@ namespace com.playchilla.runner.player
                 int currentTime = (int)(Time.time * 1000);
                 float alpha = Time.deltaTime;
                 UpdateHandAnimation(currentTime, alpha);
+                
+                // Debug log every 60 frames
+                if (Time.frameCount % 60 == 0)
+                {
+                    Debug.Log($"[PlayerView] Update: pos={transform.position}, upperArmLeft={_upperArmLeft != null}, lowerArmLeft={_lowerArmLeft != null}, playerSpeedAlpha={_player.GetSpeedAlpha()}");
+                }
             }
         }
 
