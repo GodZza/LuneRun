@@ -47,9 +47,19 @@ namespace LuneRun
             // 创建轨道生成器
             CreateTrackGenerator();
 
+            // 【重要】先生成测试轨道（填充segments到flashTrack）
+            GenerateTestTrack();
+
             // 创建 Level（管理游戏世界和实体）
             // Level 内部会创建 Player 和 PlayerView
             CreateLevel();
+
+            // 【重要】设置Level使用已生成的Flash Track
+            if (level != null && flashTrack != null)
+            {
+                level.SetTrack(flashTrack);
+                Debug.Log($"[TestTrackSetup] Set flash track to level with {flashTrack.GetSegments().Count} segments");
+            }
 
             // 创建 PlayerController（Unity 物理）
             CreatePlayer();
@@ -57,16 +67,6 @@ namespace LuneRun
             // 获取 Level 内部的 Player 和 PlayerView
             player = level.GetPlayer();
             playerView = level.GetPlayerView();
-
-            // 生成测试轨道
-            GenerateTestTrack();
-
-            // 设置Level使用生成的Flash Track
-            if (level != null && flashTrack != null)
-            {
-                level.SetTrack(flashTrack);
-                Debug.Log($"[TestTrackSetup] Set flash track to level");
-            }
 
             // 定位相机
             PositionCamera();

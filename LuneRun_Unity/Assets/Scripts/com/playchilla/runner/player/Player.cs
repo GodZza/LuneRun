@@ -40,11 +40,11 @@ namespace com.playchilla.runner.player
             _startPos = startPos.clone();
             _vel = new Vec3(0, 0, 0); // Initialize velocity
             _speed = 0; // Initialize speed
-            _track = level.GetTrack();
+            _track = null; // Don't get track yet - will be set via SetTrack()
             _world = level.GetWorld();
             // Initialize breath sound placeholder
             _breathSound = gameObject.AddComponent<AudioSource>();
-            // Additional initialization as needed
+            Debug.Log($"[Player.Initialize] Player initialized, track will be set later");
         }
         
         public Vec3 GetPos() => _pos;

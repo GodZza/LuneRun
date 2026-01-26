@@ -25,20 +25,17 @@ namespace com.playchilla.runner
         {
             _levelId = levelId;
             _isHardware = isHardware;
-            
+
             // Create game container if not exists
             if (_gameCont == null)
             {
                 _gameCont = new GameObject("GameContainer");
                 _gameCont.transform.SetParent(transform);
             }
-            
+
             // Create materials instance
             _materials = new Materials();
 
-            // Create track instance BEFORE player (player needs it)
-            _track = new Track();
-            
             // Create world instance (must be created before player initialization)
             _world = new World(this, _gameCont);
 
@@ -49,7 +46,7 @@ namespace com.playchilla.runner
             // Save keyboard reference for input synchronization
             _keyboardInput = keyboard;
 
-            // Create player instance (now track is available)
+            // Create player instance
             GameObject playerObj = new GameObject("Player");
             playerObj.transform.SetParent(_gameCont.transform);
             _player = playerObj.AddComponent<Player>();
@@ -73,12 +70,12 @@ namespace com.playchilla.runner
             _playerView = playerViewObj.AddComponent<PlayerView>();
             Debug.Log($"[Level] Created PlayerView, initializing with player={_player != null}, camera={mainCamera != null}, materials={_materials != null}");
             _playerView.Initialize(this, _player, mainCamera, _materials, keyboard);
-            
+
             // Add some test entities (speed entities) for demonstration
             // This should be replaced with proper entity generation based on level design
             // Disabled for now - causing visual clutter
             // AddTestEntities();
-            
+
             Debug.Log($"[Level] Initialized level {levelId} with world, player, and complete arm system");
         }
         
@@ -177,7 +174,20 @@ namespace com.playchilla.runner
         public void SetTrack(Track track)
         {
             _track = track;
-            Debug.Log($"[Level] Track set with {track.GetSegments().Count} segments");
+            // Also set track in player
+            if (_player != null)
+            {
+                var playerField = typeof(Player).GetField("_track", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (playerField != null)
+                {
+                    playerField.SetValue(_player, track);
+                    Debug.Log($"[Level] Set track to player and level with {track.GetSegments().Count} segments");
+                }
+            }
+            else
+            {
+                Debug.Log($"[Level] Set track to level (player not yet created) with {track.GetSegments().Count} segments");
+            }
         }
 
         private void Update()
