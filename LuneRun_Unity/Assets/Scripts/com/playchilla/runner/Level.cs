@@ -192,19 +192,23 @@ namespace com.playchilla.runner
 
         private void Update()
         {
-            // Convert delta time to milliseconds (original game uses integer ticks)
-            int deltaTime = Mathf.RoundToInt(Time.deltaTime * 1000);
-
-            // Update keyboard input from Unity
+            // Update keyboard input from Unity (every frame)
             UpdateKeyboardInput();
 
-            if (_player != null)
+            // Flash physics system: update at 30fps (33ms per tick) to match Flash frame rate
+            // This prevents the game from running 2x faster than intended
+            _accumulatedTime += Time.deltaTime * 1000; // Convert to milliseconds
+
+            while (_accumulatedTime >= 33) // 33ms = 30fps
             {
-                _player.Tick(deltaTime);
+                _player.Tick(33); // Flash uses ~33ms per frame (30fps)
+                _accumulatedTime -= 33;
             }
 
             if (_world != null)
             {
+                // Update world every frame (for smooth visuals)
+                int deltaTime = Mathf.RoundToInt(Time.deltaTime * 1000);
                 _world.Tick(deltaTime);
                 // Render with interpolation (simplified - no interpolation for now)
                 _world.Render(deltaTime, 0f);
@@ -217,6 +221,8 @@ namespace com.playchilla.runner
                 }
             }
         }
+
+        private float _accumulatedTime = 0f;
 
         private void UpdateKeyboardInput()
         {
