@@ -222,12 +222,15 @@ namespace com.playchilla.runner
 
             // Flash physics system: update at 30fps (33ms per tick) to match Flash frame rate
             // This prevents the game from running 2x faster than intended
-            _accumulatedTime += Time.deltaTime * 1000; // Convert to milliseconds
-
-            while (_accumulatedTime >= 33) // 33ms = 30fps
+            if (_player != null) // 添加 null 检查
             {
-                _player.Tick(33); // Flash uses ~33ms per frame (30fps)
-                _accumulatedTime -= 33;
+                _accumulatedTime += Time.deltaTime * 1000; // Convert to milliseconds
+
+                while (_accumulatedTime >= 33) // 33ms = 30fps
+                {
+                    _player.Tick(33); // Flash uses ~33ms per frame (30fps)
+                    _accumulatedTime -= 33;
+                }
             }
 
             if (_world != null)
@@ -251,6 +254,13 @@ namespace com.playchilla.runner
 
         private void UpdateKeyboardInput()
         {
+            // 检查 _keyboardInput 是否已初始化（单元测试可能没有初始化）
+            if (_keyboardInput == null)
+            {
+                // 在单元测试模式下，不需要输入同步
+                return;
+            }
+
             // Clear previous frame's pressed/released state
             _keyboardInput.Reset();
 

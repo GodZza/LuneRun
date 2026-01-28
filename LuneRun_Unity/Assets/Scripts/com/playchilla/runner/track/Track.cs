@@ -27,6 +27,17 @@ namespace com.playchilla.runner.track
         public Segment AddSegment(Segment segment)
         {
             _segments.Add(segment);
+
+            // 更新 connectPart 为新段的终点（LastPart），供下一次生成使用
+            if (segment != null)
+            {
+                Part lastPart = segment.GetLastPart();
+                if (lastPart != null)
+                {
+                    _connectPart = lastPart;
+                }
+            }
+
             return segment;
         }
 

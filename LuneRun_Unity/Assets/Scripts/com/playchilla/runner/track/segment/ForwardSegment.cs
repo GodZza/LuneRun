@@ -10,12 +10,12 @@ namespace com.playchilla.runner.track.segment
         private const float PartLength = 10f; // Placeholder
         private object _material;
 
-        public ForwardSegment(string name, double y, Part connectPart, Vec3Const direction, 
-                             double rotationY, double rotationZ, int parts, Materials materials, 
-                             int levelId, bool addStartPart = true, bool addEndPart = true) 
+        public ForwardSegment(string name, double y, Part connectPart, Vec3Const direction,
+                             double rotationY, double rotationZ, int parts, Materials materials,
+                             int levelId, bool addStartPart = true, bool addEndPart = true)
             : base(connectPart, name, levelId)
         {
-            _material = materials.GetMaterial("part");
+            _material = materials?.GetMaterial("part");
             
             if (connectPart == null)
             {

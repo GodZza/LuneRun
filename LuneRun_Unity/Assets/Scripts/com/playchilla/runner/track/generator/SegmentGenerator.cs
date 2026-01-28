@@ -23,6 +23,12 @@ namespace com.playchilla.runner.track.generator
         public Segment AddForwardSegment(double y, double rotationY, double rotationZ, int parts, int segmentCount, bool addStartPart = true, bool addEndPart = true)
         {
             Part connectPart = _track.GetConnectPart();
+            if (connectPart == null)
+            {
+                Debug.LogError("[SegmentGenerator] connectPart is null! Call _track.SetConnectPart() first.");
+                // Create default connect part
+                connectPart = new Part(null, new Vec3(0, 0, 0), new Vec3(0, 0, 1), new Vec3(0, 1, 0), new GameObject(), 0, 0);
+            }
             _segment = new ForwardSegment("XSegment", y, connectPart, connectPart.dir, rotationY, rotationZ, parts, _materials, segmentCount, addStartPart, addEndPart);
             _track.AddSegment(_segment);
             return _segment;
@@ -30,7 +36,14 @@ namespace com.playchilla.runner.track.generator
 
         public Segment AddHoleSegment(int parts, int segmentCount)
         {
-            _segment = new HoleSegment(_track.GetConnectPart(), _track.GetConnectPart().dir, parts, segmentCount);
+            Part connectPart = _track.GetConnectPart();
+            if (connectPart == null)
+            {
+                Debug.LogError("[SegmentGenerator] connectPart is null! Call _track.SetConnectPart() first.");
+                // Create default connect part
+                connectPart = new Part(null, new Vec3(0, 0, 0), new Vec3(0, 0, 1), new Vec3(0, 1, 0), new GameObject(), 0, 0);
+            }
+            _segment = new HoleSegment(connectPart, connectPart.dir, parts, segmentCount);
             _track.AddSegment(_segment);
             return _segment;
         }
