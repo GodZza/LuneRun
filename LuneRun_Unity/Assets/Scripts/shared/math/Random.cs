@@ -4,7 +4,7 @@ namespace shared.math
 {
     public class Random
     {
-        private uint _seed;
+        private uint _seed=1;
 
         public Random(uint seed)
         {
@@ -13,8 +13,11 @@ namespace shared.math
 
         public void SetSeed(uint seed)
         {
-            // Note: In original ActionScript, seed must be >0 and <= 2147483646
-            // We'll just accept any positive seed, but for compatibility we can keep the range
+            // In original ActionScript, seed must be > 0 and <= 2147483646
+            if (seed <= 0 || seed > 2147483646)
+            {
+                throw new ArgumentException($"Seed must be > 0 and <= 2147483646, got: {seed}");
+            }
             _seed = seed;
         }
 

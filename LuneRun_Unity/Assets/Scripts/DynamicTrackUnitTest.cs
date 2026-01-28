@@ -81,6 +81,9 @@ namespace LuneRun.Tests
                 // 1. 创建测试 Level
                 GameObject levelObj = new GameObject("TestLevel");
                 _testLevel = levelObj.AddComponent<Level>();
+
+                // 初始化Level（必须先Initialize才能设置levelId）
+                _testLevel.Initialize(testLevelId, false, null, null);
                 Debug.Log($"[1/4] 创建测试 Level (LevelId: {testLevelId})");
 
                 // 2. 创建 DynamicTrack 实例

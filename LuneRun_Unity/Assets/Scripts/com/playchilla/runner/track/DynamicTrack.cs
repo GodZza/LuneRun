@@ -26,6 +26,7 @@ namespace com.playchilla.runner.track
         private double _removeDistance = 300; // 触发卸载的距离阈值
 
         private int _segmentCount = 0;     // 已生成的轨道段总数
+        private int _lastGenerateLevelId = -1;  // 上次生成时的levelId
 
         // 调试选项
         private bool _debugMode = true;    // 启用详细调试日志
@@ -53,8 +54,8 @@ namespace com.playchilla.runner.track
                 Debug.Log("[DynamicTrack] Level.GetMaterials() returned null, using default Materials instance");
             }
 
-            // 根据关卡ID创建随机数生成器（确保相同关卡生成相同轨道）
-            _random = new global::shared.math.Random((uint)_levelId);
+            // 创建随机数生成器（seed稍后在GenerateInitialTrack中设置）
+            _random = new global::shared.math.Random(1);
 
             // 创建轨道和生成器
             _track = new Track();
@@ -92,11 +93,40 @@ namespace com.playchilla.runner.track
         /// </summary>
         private void GenerateInitialTrack()
         {
+            // 设置初始seed（与AS代码一致）
+            int seed = _levelId + 1;
+            if (_levelId != 26)
+            {
+                if (_levelId != 28)
+                {
+                    if (_levelId == 32)
+                    {
+                        seed = 105;
+                    }
+                    else
+                    {
+                        seed = 100;
+                    }
+                }
+                else
+                {
+                    seed = 101;
+                }
+            }
+            else
+            {
+                seed = 101;
+            }
+
+            _random.SetSeed((uint)seed);
+            _lastGenerateLevelId = _levelId;
+            _segmentCount = 0;
+
             // 根据关卡ID生成不同数量的初始段
             int initialSegments = _loadForward + _keepBackward;
             double difficulty = GetDifficulty();
 
-            Debug.Log($"[DynamicTrack] Generating initial track with {initialSegments} segments, difficulty={difficulty:F2}");
+            Debug.Log($"[DynamicTrack] Generating initial track with {initialSegments} segments, difficulty={difficulty:F2}, seed={seed}");
 
             // 创建起始连接部分并设置到 Track
             Part connectPart = CreateStartConnectPart();
@@ -242,6 +272,40 @@ namespace com.playchilla.runner.track
         /// </summary>
         private void LoadNextSegment()
         {
+            // 如果levelId改变了，更新随机数seed（与AS代码一致）
+            if (_levelId != _lastGenerateLevelId)
+            {
+                int seed = _levelId + 1;
+
+                // 特殊levelId的seed处理
+                if (_levelId != 26)
+                {
+                    if (_levelId != 28)
+                    {
+                        if (_levelId == 32)
+                        {
+                            seed = 105;
+                        }
+                        else
+                        {
+                            seed = 100;
+                        }
+                    }
+                    else
+                    {
+                        seed = 101;
+                    }
+                }
+                else
+                {
+                    seed = 101;
+                }
+
+                _random.SetSeed((uint)seed);
+                _lastGenerateLevelId = _levelId;
+                _segmentCount = 0;  // 重置生成的段数
+            }
+
             double difficulty = GetDifficulty();
 
             Debug.Log($"[DynamicTrack] Loading segment #{_segmentCount}, difficulty={difficulty:F2}");
