@@ -16,10 +16,10 @@ namespace com.playchilla.runner.track.generator
         {
             if (difficulty < 0.07)
                 return false;
-                
+
             if (_rnd.NextDouble() > 0.4 + 0.45 * difficulty)
                 return false;
-                
+
             return true;
         }
 

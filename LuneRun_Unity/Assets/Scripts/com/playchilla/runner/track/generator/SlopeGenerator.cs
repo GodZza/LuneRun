@@ -19,21 +19,23 @@ namespace com.playchilla.runner.track.generator
         {
             if (difficulty < 0.3)
                 return false;
-                
+
             if (_rnd.NextDouble() > 0.15)
                 return false;
-                
+
             if (_up && _track.GetConnectPart().GetPos().y > 190)
                 return false;
-                
+
+            if (!_up && _track.GetConnectPart().GetPos().y < 110)
+                return false;
+
             return true;
         }
 
         public void Generate(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
         {
-            double y = GetNextY(difficulty);
-            int parts = 8 + (int)(_rnd.NextDouble() * 15);
-            AddForwardSegment(y, 0, _up ? 20 : -20, parts, segmentCount);
+            AddForwardSegment(GetNextY(difficulty), 0, _up ? -45 : 45, 5 + (int)(15 * _rnd.NextDouble()), segmentCount);
+            AddForwardSegment(GetNextY(difficulty), 0, _up ? 45 : -45, 5 + (int)(15 * _rnd.NextDouble()), segmentCount);
         }
     }
 }

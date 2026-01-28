@@ -7,27 +7,41 @@ namespace com.playchilla.runner.track.generator
 {
     public class LongJumpGenerator : SegmentGenerator, ISegmentGenerator
     {
-        public LongJumpGenerator(Track track, global::shared.math.Random rnd, Materials materials) 
+        private HoleGenerator _holeGenerator;
+        private int _holeParts = -1;
+
+        public LongJumpGenerator(Track track, global::shared.math.Random rnd, Materials materials)
             : base(track, rnd, materials)
         {
+            _holeGenerator = new HoleGenerator(track, rnd, materials);
         }
 
         public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
         {
-            if (difficulty < 0.3)
+            if (segmentCount < 20)
                 return false;
-                
-            if (_rnd.NextDouble() > 0.01 + 0.04 * difficulty)
+
+            if (_rnd.NextDouble() > 0.05)
                 return false;
-                
+
             return true;
+        }
+
+        public void SetHoleParts(int holeParts)
+        {
+            _holeParts = holeParts;
         }
 
         public void Generate(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
         {
-            double y = GetNextY(difficulty);
-            int parts = 5 + (int)(_rnd.NextDouble() * 10);
-            AddForwardSegment(y, 0, 0, parts, segmentCount);
+            AddForwardSegment(GetNextY(difficulty), 0, -35, 10, segmentCount);
+            AddForwardSegment(GetNextY(difficulty), 0, 35, 15, segmentCount);
+            AddForwardSegment(GetNextY(difficulty), 0, 35, 10, segmentCount);
+            AddForwardSegment(GetNextY(difficulty), 0, -55, 15, segmentCount);
+            AddForwardSegment(GetNextY(difficulty), 0, 0, 2, segmentCount);
+
+            _holeGenerator.SetParts(_holeParts != -1 ? _holeParts : (int)(50 + 30 * difficulty));
+            _holeGenerator.Generate(this, difficulty, segmentCount);
         }
     }
 }

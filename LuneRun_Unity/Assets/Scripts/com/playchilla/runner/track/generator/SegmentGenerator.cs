@@ -50,22 +50,58 @@ namespace com.playchilla.runner.track.generator
 
         public double GetNextY(double difficulty)
         {
-            // Simplified implementation
             Segment lastSegment = _track.GetLastSegment();
             if (lastSegment == null)
                 return 0;
-            
+
             Part lastPart = lastSegment.GetLastPart();
             if (lastPart == null)
                 return 0;
-                
+
+            // If last segment is a HoleSegment, calculate Y position based on hole depth
+            if (lastSegment is HoleSegment)
+            {
+                Part lastSolidPart = GetLastSolidPart(lastSegment);
+                if (lastSolidPart != null)
+                {
+                    double solidY = lastSolidPart.GetPos().y;
+                    int numParts = lastSegment.GetNumberOfParts();
+
+                    // Calculate target Y based on hole position
+                    double targetY = solidY + 25; // Base rise after hole
+                    targetY = UnityEngine.Mathf.Min(195, (float)targetY); // Cap at 195
+
+                    double progress = UnityEngine.Mathf.Min(numParts / 70.0f, 1.0f);
+                    double minY = UnityEngine.Mathf.Max(50, (float)(targetY - targetY * 2 * progress));
+
+                    // Return random Y between minY and targetY
+                    return minY + _rnd.NextDouble() * (targetY - minY);
+                }
+            }
+
             return lastPart.GetPos().y;
         }
 
         public Part GetLastSolidPart(Segment segment)
         {
-            // Simplified implementation
-            return segment?.GetLastPart();
+            if (segment == null)
+                return null;
+
+            // If this is not a HoleSegment, return its last part
+            if (!(segment is HoleSegment))
+                return segment.GetLastPart();
+
+            // Otherwise, traverse backwards to find the last solid segment
+            Segment current = segment.GetPreviousSegment();
+            while (current != null)
+            {
+                if (!(current is HoleSegment))
+                    return current.GetLastPart();
+
+                current = current.GetPreviousSegment();
+            }
+
+            return null;
         }
     }
 }

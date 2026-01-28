@@ -21,6 +21,7 @@ namespace LuneRun.Tests
         {
             Debug.Log("========== Pure DynamicTrack Unit Test ==========");
             TestTrackGeneration();
+            TestAllGenerators();
             TestSegmentConnections();
             TestDynamicLoading();
             Cleanup();
@@ -93,6 +94,81 @@ namespace LuneRun.Tests
                 else
                 {
                     Debug.Log($"✓ 成功生成 {segmentCount} 个段");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"✗ 测试失败: {e.Message}");
+                Debug.LogException(e);
+            }
+        }
+
+        /// <summary>
+        /// 测试 1.5: 所有生成器测试
+        /// </summary>
+        private void TestAllGenerators()
+        {
+            Debug.Log("\n[Test 1.5] 所有生成器测试");
+            Debug.Log("----------------------------------");
+
+            try
+            {
+                // 重新初始化轨道
+                _track = new Track();
+                _track.SetConnectPart(new Part(null, new Vec3(0, 150, 0), new Vec3(0, 0, 1), new Vec3(0, 1, 0), new GameObject(), 0, 0));
+                _generator = new com.playchilla.runner.track.TrackGenerator(_materials);
+                _random = new global::shared.math.Random((uint)1);
+
+                // 添加所有生成器
+                _generator.AddSegmentGenerator(new com.playchilla.runner.track.generator.ForwardGenerator(_track, _random, _materials, null));
+                _generator.AddSegmentGenerator(new com.playchilla.runner.track.generator.HoleGenerator(_track, _random, _materials));
+                _generator.AddSegmentGenerator(new com.playchilla.runner.track.generator.SlopeGenerator(_track, _random, _materials, true));
+                _generator.AddSegmentGenerator(new com.playchilla.runner.track.generator.SlopeGenerator(_track, _random, _materials, false));
+                _generator.AddSegmentGenerator(new com.playchilla.runner.track.generator.CurveGenerator(_track, _random, _materials));
+                _generator.AddSegmentGenerator(new com.playchilla.runner.track.generator.HillGenerator(_track, _random, _materials));
+                _generator.AddSegmentGenerator(new com.playchilla.runner.track.generator.LoopGenerator(_track, _random, _materials));
+                _generator.AddSegmentGenerator(new com.playchilla.runner.track.generator.LongJumpGenerator(_track, _random, _materials));
+                _generator.AddSegmentGenerator(new com.playchilla.runner.track.generator.IslandGenerator(_track, _random, _materials));
+                _generator.AddSegmentGenerator(new com.playchilla.runner.track.generator.StraightGenerator(_track, _random, _materials));
+
+                // 生成 30 个段以测试所有生成器
+                Debug.Log("使用所有生成器生成 30 个段...");
+                int attempts = 0;
+                int targetSegments = 30;
+                while (_track.GetSegments().Count < targetSegments && attempts < 100)
+                {
+                    _generator.Generate(_track, _random, 0.8, _track.GetSegments().Count, 1);
+                    attempts++;
+                }
+
+                // 验证
+                int segmentCount = _track.GetSegments().Count;
+                Debug.Log($"✓ 尝试了 {attempts} 次生成，实际生成了 {segmentCount} 个段");
+
+                if (segmentCount < targetSegments)
+                {
+                    Debug.LogWarning($"⚠ 未达到目标段数 {targetSegments}，实际 {segmentCount}");
+                }
+                else
+                {
+                    Debug.Log($"✓ 成功生成 {segmentCount} 个段");
+
+                    // 统计每种生成器生成的段
+                    var generatorNames = new System.Collections.Generic.Dictionary<string, int>();
+                    foreach (var segment in _track.GetSegments())
+                    {
+                        string typeName = segment.GetType().Name;
+                        if (generatorNames.ContainsKey(typeName))
+                            generatorNames[typeName]++;
+                        else
+                            generatorNames[typeName] = 1;
+                    }
+
+                    Debug.Log("各类型段分布:");
+                    foreach (var kvp in generatorNames)
+                    {
+                        Debug.Log($"  - {kvp.Key}: {kvp.Value}");
+                    }
                 }
             }
             catch (System.Exception e)

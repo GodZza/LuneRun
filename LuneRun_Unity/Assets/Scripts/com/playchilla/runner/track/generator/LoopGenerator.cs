@@ -14,20 +14,14 @@ namespace com.playchilla.runner.track.generator
 
         public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
         {
-            if (difficulty < 0.5)
-                return false;
-                
-            if (_rnd.NextDouble() > 0.05 * difficulty)
-                return false;
-                
-            return true;
+            return segmentCount > 5 && _rnd.NextDouble() < 0.08 + 0.02 * difficulty;
         }
 
         public void Generate(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
         {
             double y = GetNextY(difficulty);
-            int parts = 15 + (int)(_rnd.NextDouble() * 20);
-            AddForwardSegment(y, 0, 90, parts, segmentCount);
+            double parts = 35 + _rnd.NextDouble() * 30;
+            AddForwardSegment(y, 10, -360, (int)parts, segmentCount);
         }
     }
 }
