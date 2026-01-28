@@ -35,6 +35,11 @@ namespace com.playchilla.runner.track
             _segments.Remove(segment);
         }
 
+        public void SetConnectPart(Part part)
+        {
+            _connectPart = part;
+        }
+
         /// <summary>
         /// Finds the closest part to the given position.
         /// </summary>

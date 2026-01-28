@@ -11,6 +11,7 @@ namespace com.playchilla.runner.track.generator
         protected Track _track;
         protected global::shared.math.Random _rnd;
         protected Materials _materials;
+        protected Segment _segment; // 存储最后生成的段，供TrackGenerator访问
 
         public SegmentGenerator(Track track, global::shared.math.Random rnd, Materials materials)
         {
@@ -22,12 +23,16 @@ namespace com.playchilla.runner.track.generator
         public Segment AddForwardSegment(double y, double rotationY, double rotationZ, int parts, int segmentCount, bool addStartPart = true, bool addEndPart = true)
         {
             Part connectPart = _track.GetConnectPart();
-            return _track.AddSegment(new ForwardSegment("XSegment", y, connectPart, connectPart.dir, rotationY, rotationZ, parts, _materials, segmentCount, addStartPart, addEndPart));
+            _segment = new ForwardSegment("XSegment", y, connectPart, connectPart.dir, rotationY, rotationZ, parts, _materials, segmentCount, addStartPart, addEndPart);
+            _track.AddSegment(_segment);
+            return _segment;
         }
 
         public Segment AddHoleSegment(int parts, int segmentCount)
         {
-            return _track.AddSegment(new HoleSegment(_track.GetConnectPart(), _track.GetConnectPart().dir, parts, segmentCount));
+            _segment = new HoleSegment(_track.GetConnectPart(), _track.GetConnectPart().dir, parts, segmentCount);
+            _track.AddSegment(_segment);
+            return _segment;
         }
 
         public double GetNextY(double difficulty)

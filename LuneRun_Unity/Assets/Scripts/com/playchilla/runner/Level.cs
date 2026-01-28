@@ -14,13 +14,19 @@ namespace com.playchilla.runner
         private int _levelId;
         private bool _isHardware;
         private Player _player;
+
+        public int GetLevelId()
+        {
+            return _levelId;
+        }
         private Materials _materials;
         private GameObject _gameCont; // Placeholder for game container
         private World _world; // World instance
         private PlayerView _playerView;
         private Track _track;
+        private com.playchilla.runner.track.DynamicTrack _dynamicTrack; // 动态轨道系统
         private KeyboardInput _keyboardInput; // Reference for input synchronization
-        
+
         public void Initialize(int levelId, bool isHardware, Settings settings, IRunnerApi runnerApi)
         {
             _levelId = levelId;
@@ -35,6 +41,10 @@ namespace com.playchilla.runner
 
             // Create materials instance
             _materials = new Materials();
+
+            // Create dynamic track system (creates track internally)
+            _dynamicTrack = new com.playchilla.runner.track.DynamicTrack(this, 6, 2);
+            _track = _dynamicTrack.GetTrack();
 
             // Create world instance (must be created before player initialization)
             _world = new World(this, _gameCont);
@@ -190,10 +200,25 @@ namespace com.playchilla.runner
             }
         }
 
+        /// <summary>
+        /// 获取动态轨道系统
+        /// </summary>
+        public com.playchilla.runner.track.DynamicTrack GetDynamicTrack()
+        {
+            return _dynamicTrack;
+        }
+
         private void Update()
         {
             // Update keyboard input from Unity (every frame)
             UpdateKeyboardInput();
+
+            // Update dynamic track system (check if we need to load/unload segments)
+            if (_dynamicTrack != null && _player != null)
+            {
+                Vec3 playerPos = _player.GetPos();
+                _dynamicTrack.Update(playerPos);
+            }
 
             // Flash physics system: update at 30fps (33ms per tick) to match Flash frame rate
             // This prevents the game from running 2x faster than intended
