@@ -44,7 +44,7 @@ namespace LuneRun
             // Create level instance first (manages world and entities)
             GameObject levelObj = new GameObject("Level");
             level = levelObj.AddComponent<Level>();
-            level.Initialize(levelId, isHardware, settings, runnerApi);
+            //level.Initialize(levelId, isHardware, settings, runnerApi);  //-----------------------------------------------
             
             // Generate track with Flash track reference
             trackGenerator = GetComponent<TrackGenerator>();

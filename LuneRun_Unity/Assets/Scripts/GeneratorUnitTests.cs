@@ -24,7 +24,7 @@ namespace LuneRun.Tests
         {
             _track = new Track();
             _track.SetConnectPart(new Part(null, new Vec3(0, 150, 0), new Vec3(0, 0, 1), new Vec3(0, 1, 0), null, 0, 0));
-            _random = new global::shared.math.Random((uint)1);
+            _random = new global::shared.math.Random(1);
             _materials = new Materials();
         }
 

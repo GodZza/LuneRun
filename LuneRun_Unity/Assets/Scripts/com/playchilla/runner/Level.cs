@@ -6,6 +6,8 @@ using com.playchilla.gameapi.api;
 using shared.input;
 using com.playchilla.runner.track.entity;
 using shared.math;
+using com.playchilla.runner.ambient;
+using System;
 
 namespace com.playchilla.runner
 {
@@ -15,6 +17,8 @@ namespace com.playchilla.runner
         private bool _isHardware;
         private Player _player;
 
+        private bool _hasCompleted = false;
+
         public int GetLevelId()
         {
             return _levelId;
@@ -23,20 +27,62 @@ namespace com.playchilla.runner
         private GameObject _gameCont; // Placeholder for game container
         private World _world; // World instance
         private PlayerView _playerView;
-        private Track _track;
         private com.playchilla.runner.track.DynamicTrack _dynamicTrack; // 动态轨道系统
-        private KeyboardInput _keyboardInput; // Reference for input synchronization
-
-        public void Initialize(int levelId, bool isHardware, Settings settings, IRunnerApi runnerApi)
+        private KeyboardInput _keyboard; // Reference for input synchronization
+        private Camera _camera;
+        private MouseInput _mouse;
+        private Settings _settings;
+        private IRunnerApi _runnerApi;
+        private double _horizDist;
+        private Light _light1; // dir
+        private Light _light2; // point
+        private TrackView _trackView;
+        private int _tutorialStep;
+        private Curtain _curtain;
+        public Level Initialize(Camera camera, MouseInput mi, KeyboardInput ki, int levelId, bool showChapter, bool isHardware, Settings settings, IRunnerApi runnerApi)
         {
-            _levelId = levelId;
-            _isHardware = isHardware;
+            _gameCont = new GameObject("GameContainer");
 
-            // Create game container if not exists
-            if (_gameCont == null)
+            _isHardware = isHardware;
+            _camera = camera;
+            _mouse = mi;
+            _keyboard = ki;
+            _settings = settings;
+            _runnerApi = runnerApi;
+
+            _levelId = levelId;
+            _generateForLevel = levelId;
+
+            // 设置摄像头
+            _camera.fieldOfView = 90;
+            _camera.nearClipPlane = 0.01f;
+            _camera.farClipPlane = 40000f;
+            _horizDist = _camera.farClipPlane / Math.Sqrt(3);
+            _showChapter = showChapter;
+
+            _light1 = Utils.New<Light>("light1-dir");
+            _light1.type = LightType.Directional;
+            _light1.color = new Color32(0xA0, 0xA0, 0x00, 0xFF); //10526720
+            //_light1.diffuse = 0;
+            //_light1.specular = 0.2;
+            //_light1.ambient = 0.6;
+
+            _light2 = Utils.New<Light>("light2-point");
+            _light2.type = LightType.Point;
+            _light2.range = 1000;
+            //_light2.fallOff = 2000;
+            _light2.color = new Color32(0xA0, 0xA0, 0xA0,0xFF);
+            //_light2.diffuse = 0.6;
+            //_light2.specular = 0.2;
+            //_light2.ambient = 0.6;
+
+            if(isHardware) // 支持硬件加速
             {
-                _gameCont = new GameObject("GameContainer");
-                _gameCont.transform.SetParent(transform);
+
+            }
+            else
+            {
+                UnityEngine.Object.DestroyImmediate(_light2.gameObject);
             }
 
             // Create materials instance
@@ -44,53 +90,132 @@ namespace com.playchilla.runner
 
             // Create dynamic track system (creates track internally)
             _dynamicTrack = new com.playchilla.runner.track.DynamicTrack(this, 6, 2);
-            _track = _dynamicTrack.GetTrack();
+            _trackView = Utils.New<TrackView>().Initialize(_dynamicTrack.GetTrack());
 
-            // Create world instance (must be created before player initialization)
-            _world = new World(this, _gameCont);
+            // 玩家
+            var startPos = _dynamicTrack.GetTrack().GetStartPos().add(new Vec3(0, 0, 10));
+            _player = Utils.New<Player>().Initialize(this, _keyboard, _mouse, startPos);
+            _playerView = Utils.New<PlayerView>().Initialize(this, _player, _camera, _materials, _keyboard);
 
-            // Create input instances
-            KeyboardInput keyboard = new KeyboardInput();
-            MouseInput mouse = new MouseInput();
+            UpdateLevelInfo();
+            SetupGround();
 
-            // Save keyboard reference for input synchronization
-            _keyboardInput = keyboard;
+            _tutorialStep = this._levelId == 1 || !this._settings.HasSeenTutorial() ? 0 : -1;
 
-            // Create player instance
-            GameObject playerObj = new GameObject("Player");
-            playerObj.transform.SetParent(_gameCont.transform);
-            _player = playerObj.AddComponent<Player>();
+            SetupSkybox(); 
+            SetupChapter();
 
-            // 按照AS代码逻辑：var loc1:*=this._dynamicTrack.getTrack().getStartPos().addXYZ(0, 0, 10);
-            Vec3 startPos = _track.GetStartPos().add(new Vec3(0, 0, 10));
-
-            _player.Initialize(this, keyboard, mouse, startPos);
-
-            // Get main camera
-            Camera mainCamera = Camera.main;
-            if (mainCamera == null)
-            {
-                // Create a camera if none exists
-                GameObject cameraObj = new GameObject("MainCamera");
-                mainCamera = cameraObj.AddComponent<Camera>();
-                cameraObj.tag = "MainCamera";
-            }
-
-            // Create player view instance with complete arm system
-            GameObject playerViewObj = new GameObject("PlayerView");
-            playerViewObj.transform.SetParent(_gameCont.transform);
-            _playerView = playerViewObj.AddComponent<PlayerView>();
-            Debug.Log($"[Level] Created PlayerView, initializing with player={_player != null}, camera={mainCamera != null}, materials={_materials != null}");
-            _playerView.Initialize(this, _player, mainCamera, _materials, keyboard);
-
-            // Add some test entities (speed entities) for demonstration
-            // This should be replaced with proper entity generation based on level design
-            // Disabled for now - causing visual clutter
-            // AddTestEntities();
+            _noah = Utils.New<Noah>().Initialize(new Light[] { _light1, _light2 });
+            _curtain = Utils.New<Curtain>().Initialize(3, 1);
 
             Debug.Log($"[Level] Initialized level {levelId} with world, player, and complete arm system");
+            return this;
         }
-        
+
+        void SetupGround()
+        {
+
+        }
+
+        void SetupSkybox() { }
+
+        void SetupChapter()
+        {
+
+        }
+        void UpdateTutorial()
+        {
+
+        }
+
+        void UpdateLevelInfo() { }
+        void UpdateTimeInfo(bool visible) { }
+
+        Noah GetNoah() => null;
+
+        void CenterGround()
+        {
+
+        }
+
+        void Destroy()
+        {
+
+        }
+
+        // render ,renderTick , update
+        int _startTick;
+        int _generateForLevel;
+        double _time;
+        bool _isFirst;
+        Noah _noah;
+        bool _showChapter;
+        public void Tick(int tick)
+        {
+            if (this._startTick == -1) 
+            {
+                this._startTick = tick;
+            }
+            //this._world.tick(arg1);
+            //if (this._chapter == null) 
+            //{
+            //    this._updateTutorial();
+            //}
+            //else 
+            //{
+            //    this._chapter.tick(arg1);
+            //    if (this._chapter.isDone())
+            //    {
+            //        this._chapter = null;
+            //    }
+            //}
+            //com.playchilla.runner.Engine.pt.start("player.tick");
+            this._player.Tick(tick);
+            //com.playchilla.runner.Engine.pt.stop("player.tick");
+            //com.playchilla.runner.Engine.pt.start("dynamicTrack.update");
+            var loc1 = 10 + (this._levelId< 25 ? this._levelId / 32 * 8 : this._levelId / 32 * 16);
+            if (this._generateForLevel == 1) 
+            {
+                loc1 = 17;
+            }
+            if (this._generateForLevel == 20) 
+            {
+                loc1 = 2;
+            }
+            if (this._dynamicTrack.Update(this._player.GetCurrentPart(), this._generateForLevel, loc1)) 
+            {
+                _generateForLevel += 1;
+            }
+            var segmentLevelId =this._player.GetCurrentPart().segment.GetLevelId();
+
+            if (segmentLevelId != this._levelId && segmentLevelId != -1) 
+            {
+                this._time = com.playchilla.runner.Tick.ticksToSec(tick - this._startTick);
+                this._isFirst = false;
+                this._startTick = tick;
+                var time = (int)Math.Round(this._time* 1000);
+                //this._runnerApi.score(this._levelId, loc3, this);
+                _levelId += 1;
+                this.UpdateLevelInfo();
+                if (this._levelId > 32) 
+                {
+                    this._hasCompleted = true;
+                }
+                this._showChapter = true;
+                this.SetupChapter();
+            }
+            //com.playchilla.runner.Engine.pt.stop("dynamicTrack.update");
+            //com.playchilla.runner.Engine.pt.start("ambience.tick");
+            //this._ambience.tick(arg1); //------------------------------------------
+            //com.playchilla.runner.Engine.pt.stop("ambience.tick");
+            //com.playchilla.runner.Engine.pt.start("center ground");
+            this.CenterGround();
+            //com.playchilla.runner.Engine.pt.stop("center ground");
+            //this._moon.rotationY = this._moon.rotationY + 0.02;
+            this._noah?.Tick(tick);
+        }
+
+
         private void AddTestEntities()
         {
             // Add a few speed entities along the track for testing
@@ -127,6 +252,9 @@ namespace com.playchilla.runner
         {
             return _world;
         }
+
+        public bool HasFailed() => this._player.IsDead();
+        public bool HasCompleted() => this._hasCompleted;
         
         // IScoreCallback implementation (stubs)
         void IScoreCallback.Score(Score score, bool isNewHighscore)
@@ -174,32 +302,32 @@ namespace com.playchilla.runner
 
         public Track GetTrack()
         {
-            return _track;
+            return null;
         }
 
         public Track getTrack()
         {
-            return _track;
+            return null;
         }
 
         // Set track externally (for when track is created after Level)
         public void SetTrack(Track track)
         {
-            _track = track;
-            // Also set track in player
-            if (_player != null)
-            {
-                var playerField = typeof(Player).GetField("_track", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (playerField != null)
-                {
-                    playerField.SetValue(_player, track);
-                    Debug.Log($"[Level] Set track to player and level with {track.GetSegments().Count} segments");
-                }
-            }
-            else
-            {
-                Debug.Log($"[Level] Set track to level (player not yet created) with {track.GetSegments().Count} segments");
-            }
+            //_track = track;
+            //// Also set track in player
+            //if (_player != null)
+            //{
+            //    var playerField = typeof(Player).GetField("_track", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            //    if (playerField != null)
+            //    {
+            //        playerField.SetValue(_player, track);
+            //        Debug.Log($"[Level] Set track to player and level with {track.GetSegments().Count} segments");
+            //    }
+            //}
+            //else
+            //{
+            //    Debug.Log($"[Level] Set track to level (player not yet created) with {track.GetSegments().Count} segments");
+            //}
         }
 
         /// <summary>
@@ -272,18 +400,18 @@ namespace com.playchilla.runner
 
         private void ApplyTestInputSimulation()
         {
-            if (_keyboardInput == null)
+            if (_keyboard == null)
             {
                 return;
             }
 
             if (_simulateSpacePress)
             {
-                _keyboardInput.SetPress(32);
+                _keyboard.SetPress(32);
             }
             if (_simulateSpaceRelease)
             {
-                _keyboardInput.SetRelease(32);
+                _keyboard.SetRelease(32);
             }
         }
 
@@ -297,14 +425,14 @@ namespace com.playchilla.runner
         private void UpdateKeyboardInput()
         {
             // 检查 _keyboardInput 是否已初始化（单元测试可能没有初始化）
-            if (_keyboardInput == null)
+            if (_keyboard == null)
             {
                 // 在单元测试模式下，不需要输入同步
                 return;
             }
 
             // Clear previous frame's pressed/released state
-            _keyboardInput.Reset();
+            _keyboard.Reset();
 
 #if DEBUG
             // 应用测试模拟输入（测试扩展功能）
@@ -316,13 +444,21 @@ namespace com.playchilla.runner
             // Space key (code 32 in Flash/Air)
             if (Input.GetKey(KeyCode.Space))
             {
-                _keyboardInput.SetPress(32);
+                _keyboard.SetPress(32);
             }
             if (Input.GetKeyUp(KeyCode.Space))
             {
-                _keyboardInput.SetRelease(32);
+                _keyboard.SetRelease(32);
             }
         }
 
+    }
+}
+
+public class TrackView : MonoBehaviour
+{
+    public TrackView Initialize(Track t) 
+    {
+        return this;
     }
 }

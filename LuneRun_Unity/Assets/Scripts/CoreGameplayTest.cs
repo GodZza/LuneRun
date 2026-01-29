@@ -141,7 +141,7 @@ namespace LuneRun.Tests
                 // 1. 创建测试 Level
                 GameObject levelObj = new GameObject("TestLevel");
                 _testLevel = levelObj.AddComponent<Level>();
-                _testLevel.Initialize(testLevelId, false, null, null);
+                //_testLevel.Initialize(testLevelId, false, null, null); //-------------------------
                 LogMessage($"[1/5] 创建测试 Level (LevelId: {testLevelId})");
 
                 // 2. 获取 Player

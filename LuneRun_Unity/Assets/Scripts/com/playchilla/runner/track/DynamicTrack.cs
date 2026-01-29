@@ -3,20 +3,29 @@ using UnityEngine;
 using shared.math;
 using com.playchilla.runner.track.generator;
 using com.playchilla.runner.track.segment;
+using System;
+using UnityEngine.Assertions;
 
 namespace com.playchilla.runner.track
 {
+    class TutorialGenerator 
+    {
+        public TutorialGenerator(Track track, global::shared.math.Random rnd, Materials materials) { }
+        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int segmentCount) { }
+    } // TODO：
+
+
     /// <summary>
     /// DynamicTrack - 动态轨道管理系统
     /// 根据玩家位置自动生成和卸载轨道段，实现无限轨道
     /// </summary>
     public class DynamicTrack
     {
-        private Track _track;
+        private Track _track = new();
+        private shared.math.Random _rnd = new(1);
         private TrackGenerator _generator;
-        private global::shared.math.Random _random;
         private Level _level;
-        private Materials _materials;
+        
         private int _levelId;
 
         // 配置参数
@@ -27,11 +36,17 @@ namespace com.playchilla.runner.track
 
         private int _segmentCount = 0;     // 已生成的轨道段总数
         private int _lastGenerateLevelId = -1;  // 上次生成时的levelId
+        private int _generatedForLevel = 0;
 
         // 调试选项
         private bool _debugMode = true;    // 启用详细调试日志
         private int _loadedSegments = 0;    // 统计：已加载的段数
         private int _removedSegments = 0;   // 统计：已移除的段数
+
+        private ForwardGenerator _forwardGen;
+        private LongJumpGenerator _longJumpGen;
+        private TutorialGenerator _tutorialGenerator;
+        private LongJumpTutorialGenerator _longJumpTutorial;
 
         /// <summary>
         /// 构造函数
@@ -45,21 +60,6 @@ namespace com.playchilla.runner.track
             _loadForward = loadForward;
             _keepBackward = keepBackward;
             _levelId = level.GetLevelId();
-            _materials = level.GetMaterials();
-
-            // 如果 Level 还没有初始化 Materials，创建一个默认实例
-            if (_materials == null)
-            {
-                _materials = new Materials();
-                Debug.Log("[DynamicTrack] Level.GetMaterials() returned null, using default Materials instance");
-            }
-
-            // 创建随机数生成器（seed稍后在GenerateInitialTrack中设置）
-            _random = new global::shared.math.Random(1);
-
-            // 创建轨道和生成器
-            _track = new Track();
-            _generator = new TrackGenerator(_materials);
 
             // 初始化生成器
             InitializeGenerators();
@@ -75,17 +75,116 @@ namespace com.playchilla.runner.track
         /// </summary>
         private void InitializeGenerators()
         {
-            // 添加各种生成器
-            _generator.AddSegmentGenerator(new ForwardGenerator(_track, _random, _materials, _level));
-            _generator.AddSegmentGenerator(new HillGenerator(_track, _random, _materials));
-            _generator.AddSegmentGenerator(new CurveGenerator(_track, _random, _materials));
-            _generator.AddSegmentGenerator(new HoleGenerator(_track, _random, _materials));
-            _generator.AddSegmentGenerator(new IslandGenerator(_track, _random, _materials));
-            _generator.AddSegmentGenerator(new LongJumpGenerator(_track, _random, _materials));
-            _generator.AddSegmentGenerator(new LoopGenerator(_track, _random, _materials));
-            _generator.AddSegmentGenerator(new SlopeGenerator(_track, _random, _materials, true)); // up slope
+            var materials = this._level.GetMaterials();
 
-            Debug.Log($"[DynamicTrack] Initialized {8} segment generators");
+            _forwardGen = new(_track, _rnd, materials, _level);
+            _longJumpGen = new(_track, _rnd, materials);
+
+            _generator = new TrackGenerator(materials);
+            // 添加默认开始赛道?
+            _track.AddSegment(new ForwardSegment("ForwardSegment", 150, null, new Vec3(0, 0, 1), 0, 0, 20, materials, -1));
+
+            _generator.AddSegmentGenerator(new ForwardGenerator (_track, _rnd, materials, _level));
+            _generator.AddSegmentGenerator(new HoleGenerator    (_track, _rnd, materials));
+            _generator.AddSegmentGenerator(new SlopeGenerator   (_track, _rnd, materials, true)); // up slope
+            _generator.AddSegmentGenerator(new SlopeGenerator   (_track, _rnd, materials, false)); // down slope            
+            _generator.AddSegmentGenerator(new CurveGenerator   (_track, _rnd, materials));
+            _generator.AddSegmentGenerator(new HillGenerator    (_track, _rnd, materials));
+            _generator.AddSegmentGenerator(new LoopGenerator    (_track, _rnd, materials));
+            _generator.AddSegmentGenerator(new LongJumpGenerator(_track, _rnd, materials));
+            _generator.AddSegmentGenerator(new IslandGenerator  (_track, _rnd, materials));
+
+            _tutorialGenerator = new TutorialGenerator(_track, _rnd, materials);
+            _longJumpTutorial = new LongJumpTutorialGenerator(_track, _rnd, materials);
+
+            Debug.Log($"[DynamicTrack] Initialized x segment generators");
+        }
+
+        public void TryRemove(Part part)
+        {
+            if(part == null) return;
+
+            var segment = part.segment.GetPreviousSegment();
+            if(segment == null) return;
+            var keep = _keepBackward;
+            while(segment != null && --keep > 0)
+            {
+                segment = segment.GetPreviousSegment();
+                if(segment != null)
+                {
+                    _track.RemoveSegment(segment);
+                }
+            }
+        }
+
+        public void TryAdd(int levelId, int maxSegment)
+        {
+            // 如果levelId改变了，更新随机数seed（与AS代码一致）
+            if (levelId != _lastGenerateLevelId)
+            {
+                var seed = _levelId + 1;
+
+                // 特殊levelId的seed处理
+                if (_levelId == 26)
+                {
+                    seed = 101;
+                }
+                else if (_levelId == 28)
+                {
+                    seed = 100;
+                }
+                else if (_levelId == 32)
+                {
+                    seed = 105;
+                }
+
+                _rnd.SetSeed(seed);
+                _lastGenerateLevelId = _levelId;
+                _segmentCount = 0;  // 重置生成的段数
+            }
+
+            if(_segmentCount >= maxSegment)
+            {
+                return;
+            }
+            if(_track.GetSegments().Count >= this._keepBackward + this._loadForward)
+            {
+                return;
+            }
+
+            var difficulty = 1 - Math.Max(0, Math.Min((32f - levelId) / 32f, 1));
+            Assert.IsTrue(difficulty >= 0 && difficulty <= 1, $"Difficulty out of range: {difficulty}");
+            if(levelId == 1)
+            {
+                this._tutorialGenerator.Generate(null, 0, levelId);
+            }else if(levelId == 20)
+            {
+                this._longJumpTutorial.Generate(null, 0, levelId);
+            }
+            else
+            {
+                if(levelId == 32 && _segmentCount == maxSegment -1)
+                {
+                    _longJumpGen.SetHoleParts(100);
+                    _longJumpGen.Generate(_generator.GetLastGenerator(), 0.1, levelId);
+                }
+                else if(levelId == 33)
+                {
+                    _forwardGen.SetParts(40);
+                    _forwardGen.Generate(_generator.GetLastGenerator(), 0.1, levelId);
+                }
+                else if(_segmentCount != 0)
+                {
+                    _generator.Generate(this._track, this._rnd, difficulty, 1, levelId);
+                }
+                else if(levelId == 17)
+                {
+                    this._forwardGen.SetParts(300);
+                    this._forwardGen.Generate(_generator.GetLastGenerator(), difficulty, levelId);
+                }
+            }
+
+            _segmentCount += 1;
         }
 
         /// <summary>
@@ -118,7 +217,7 @@ namespace com.playchilla.runner.track
                 seed = 101;
             }
 
-            _random.SetSeed((uint)seed);
+            _rnd.SetSeed(seed);
             _lastGenerateLevelId = _levelId;
             _segmentCount = 0;
 
@@ -137,7 +236,7 @@ namespace com.playchilla.runner.track
             // 生成初始轨道段
             for (int i = 0; i < initialSegments; i++)
             {
-                _generator.Generate(_track, _random, difficulty, _segmentCount, _levelId);
+                _generator.Generate(_track, _rnd, difficulty, _segmentCount, _levelId);
                 _segmentCount++;
                 _loadedSegments++;
 
@@ -158,10 +257,18 @@ namespace com.playchilla.runner.track
 
             Part connectPart = new Part(null, startPos, startDir, startUp, new GameObject(), 0, 0);
             _track.GetSegments().Insert(0, new ForwardSegment("Start", 0, connectPart,
-                                                             startDir, 0, 0, 5, _materials, _levelId));
+                                                             startDir, 0, 0, 5, _level.GetMaterials(), _levelId));
 
             return connectPart;
         }
+
+        public bool Update(com.playchilla.runner.track.Part part, int levelId, int maxSegment)
+        {
+            this.TryRemove(part);
+            this.TryAdd(levelId, maxSegment);
+            return this._segmentCount>= maxSegment;
+        }
+
 
         /// <summary>
         /// 更新动态轨道（每帧调用）
@@ -301,7 +408,7 @@ namespace com.playchilla.runner.track
                     seed = 101;
                 }
 
-                _random.SetSeed((uint)seed);
+                _rnd.SetSeed(seed);
                 _lastGenerateLevelId = _levelId;
                 _segmentCount = 0;  // 重置生成的段数
             }
@@ -311,7 +418,7 @@ namespace com.playchilla.runner.track
             Debug.Log($"[DynamicTrack] Loading segment #{_segmentCount}, difficulty={difficulty:F2}");
 
             // 使用生成器生成新轨道段
-            _generator.Generate(_track, _random, difficulty, _segmentCount, _levelId);
+            _generator.Generate(_track, _rnd, difficulty, _segmentCount, _levelId);
             _segmentCount++;
             _loadedSegments++;
 

@@ -1,11 +1,12 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace shared.input
 {
     public class KeyboardInput
     {
-        private List<uint> _pressed = new List<uint>();
-        private List<int> _released = new List<int>();
+        private List<int> _pressed = new ();
+        private List<int> _released = new ();
         private Dictionary<int, bool> _isDown = new Dictionary<int, bool>();
 
         public KeyboardInput()
@@ -17,13 +18,13 @@ namespace shared.input
             _pressed.Clear();
             _released.Clear();
         }
-
-        public void SetPress(uint keyCode)
+        public void SetPress(KeyCode keyCode) => SetPress((int)keyCode);
+        public void SetPress(int keyCode)
         {
             _pressed.Add(keyCode);
-            _isDown[(int)keyCode] = true;
+            _isDown[keyCode] = true;
         }
-
+        public void SetRelease(KeyCode keyCode) => SetRelease((int)keyCode);
         public void SetRelease(int keyCode)
         {
             _released.Add(keyCode);
@@ -37,7 +38,7 @@ namespace shared.input
 
         public bool IsPressed(int keyCode)
         {
-            return _pressed.Contains((uint)keyCode);
+            return _pressed.Contains(keyCode);
         }
 
         public bool IsReleased(int keyCode)
@@ -45,7 +46,9 @@ namespace shared.input
             return _released.Contains(keyCode);
         }
 
-        public List<uint> GetPressed()
+        public bool IsPressed(KeyCode keyCode) => IsReleased((int)keyCode);
+
+        public List<int> GetPressed()
         {
             return _pressed;
         }

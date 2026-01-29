@@ -32,7 +32,7 @@ namespace com.playchilla.runner.player
         private double _pitch;
         private bool _firstPerson;
 
-        public void Initialize(Level level, Player player, Camera camera, Materials materials, KeyboardInput keyboard)
+        public PlayerView Initialize(Level level, Player player, Camera camera, Materials materials, KeyboardInput keyboard)
         {
             _level = level;
             _player = player;
@@ -52,6 +52,7 @@ namespace com.playchilla.runner.player
             // Position at player start
             Vec3 playerPos = player.GetPos();
             transform.position = new Vector3((float)playerPos.x, (float)playerPos.y, (float)playerPos.z);
+            return this;
         }
 
         private void CreateHandCubes()

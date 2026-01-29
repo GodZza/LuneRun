@@ -67,7 +67,7 @@ namespace LuneRun.Tests
                 _track = new Track();
                 _track.SetConnectPart(new Part(null, new Vec3(0, 0, 0), new Vec3(0, 0, 1), new Vec3(0, 1, 0), new GameObject(), 0, 0));
                 _generator = new com.playchilla.runner.track.TrackGenerator(_materials);
-                _random = new global::shared.math.Random((uint)1);
+                _random = new global::shared.math.Random(1); 
 
                 // 添加生成器
                 _generator.AddSegmentGenerator(new com.playchilla.runner.track.generator.ForwardGenerator(_track, _random, _materials, null));
@@ -117,7 +117,7 @@ namespace LuneRun.Tests
                 _track = new Track();
                 _track.SetConnectPart(new Part(null, new Vec3(0, 150, 0), new Vec3(0, 0, 1), new Vec3(0, 1, 0), new GameObject(), 0, 0));
                 _generator = new com.playchilla.runner.track.TrackGenerator(_materials);
-                _random = new global::shared.math.Random((uint)1);
+                _random = new global::shared.math.Random(1);
 
                 // 添加所有生成器
                 _generator.AddSegmentGenerator(new com.playchilla.runner.track.generator.ForwardGenerator(_track, _random, _materials, null));

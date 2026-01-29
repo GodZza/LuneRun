@@ -4,14 +4,14 @@ namespace shared.math
 {
     public class Random
     {
-        private uint _seed=1;
+        private int _seed=1;
 
-        public Random(uint seed)
+        public Random(int seed)
         {
             SetSeed(seed);
         }
 
-        public void SetSeed(uint seed)
+        public void SetSeed(int seed)
         {
             // In original ActionScript, seed must be > 0 and <= 2147483646
             if (seed <= 0 || seed > 2147483646)
@@ -21,7 +21,7 @@ namespace shared.math
             _seed = seed;
         }
 
-        public uint GetSeed()
+        public int GetSeed()
         {
             return _seed;
         }
@@ -50,8 +50,9 @@ namespace shared.math
 
         private uint Gen()
         {
-            _seed = (uint)((ulong)_seed * 16807 % 2147483647);
-            return _seed;
+            var seed = (uint)((ulong)_seed * 16807 % 2147483647);
+            _seed = (int)seed;
+            return seed;
         }
     }
 }

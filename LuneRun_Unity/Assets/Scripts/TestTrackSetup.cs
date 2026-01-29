@@ -129,7 +129,7 @@ namespace LuneRun
             // 简化的 API 实现用于测试
             IRunnerApi runnerApi = null; // 测试模式下不需要真实 API
             
-            level.Initialize(testLevelId, false, settings, runnerApi);
+            //level.Initialize(testLevelId, false, settings, runnerApi);
             
             Debug.Log("创建了 Level 对象");
         }

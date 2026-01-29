@@ -31,7 +31,7 @@ namespace com.playchilla.runner.player
         private const double _MaxSpeed = 3.8;
         private const double _g = 0.14; // per tick
         
-        public void Initialize(Level level, KeyboardInput keyboard, MouseInput mouse, Vec3 startPos)
+        public Player Initialize(Level level, KeyboardInput keyboard, MouseInput mouse, Vec3 startPos)
         {
             _level = level;
             _track = level.GetTrack();
@@ -45,6 +45,7 @@ namespace com.playchilla.runner.player
             // Initialize breath sound placeholder
             _breathSound = gameObject.AddComponent<AudioSource>();
             Debug.Log($"[Player.Initialize] Player initialized at pos=({_pos.x}, {_pos.y}, {_pos.z}), track={(_track != null ? "found" : "null")}");
+            return this;
         }
         
         public Vec3 GetPos() => _pos;
@@ -289,4 +290,5 @@ namespace com.playchilla.runner.player
 
         public void SetCurrentPart(Part part) { _currentPart = part; }
     }
+
 }

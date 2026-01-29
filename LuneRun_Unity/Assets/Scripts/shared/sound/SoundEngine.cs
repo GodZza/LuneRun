@@ -32,5 +32,10 @@ namespace shared.sound
         public void stop(int fadeOutTime) { }
         
         public void Play(double speedAlpha) { }
+
+        public void loop(double speed) { } //?speed?
+
+
+        public static string STrack1 { get; set; }
     }
 }
