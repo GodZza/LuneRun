@@ -44,7 +44,7 @@ namespace com.playchilla.runner.player
             _world = level.GetWorld();
             // Initialize breath sound placeholder
             _breathSound = gameObject.AddComponent<AudioSource>();
-            Debug.Log($"[Player.Initialize] Player initialized, track={(_track != null ? "found" : "null")}");
+            Debug.Log($"[Player.Initialize] Player initialized at pos=({_pos.x}, {_pos.y}, {_pos.z}), track={(_track != null ? "found" : "null")}");
         }
         
         public Vec3 GetPos() => _pos;

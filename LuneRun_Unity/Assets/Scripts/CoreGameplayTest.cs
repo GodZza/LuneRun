@@ -99,6 +99,23 @@ namespace LuneRun.Tests
 
             _testTimer += Time.deltaTime;
 
+            // 自动模拟按键（测试自动化）
+            // 持续按住空格键加速（除了每3秒松开一下）
+            if (_testTimer < testDuration)
+            {
+                float cycleTime = _testTimer % 3.0f;
+                if (cycleTime < 0.1f)
+                {
+                    // 每隔3秒，模拟松开空格键
+                    _testLevel.SetSpaceKeySimulation(false, true);
+                }
+                else
+                {
+                    // 其他时间，模拟按住空格键
+                    _testLevel.SetSpaceKeySimulation(true, false);
+                }
+            }
+
             // 记录统计数据
             UpdateTestStatistics();
 
@@ -111,18 +128,6 @@ namespace LuneRun.Tests
             {
                 LogMessage("用户手动结束测试");
                 EndTest();
-            }
-
-            // 模拟按键（测试用）
-            // 按住空格键加速
-            if (Input.GetKey(KeyCode.Space))
-            {
-                // 空格键由 Level.Update() 中的 UpdateKeyboardInput() 处理
-            }
-            // 松开空格键跳跃
-            if (Input.GetKeyUp(KeyCode.Space))
-            {
-                // 松开空格键由 Level.Update() 中的 UpdateKeyboardInput() 处理
             }
         }
 
@@ -157,15 +162,22 @@ namespace LuneRun.Tests
                 _testTimer = 0f;
                 LogMessage($"[4/5] 初始位置: ({_startPos.x:F2}, {_startPos.y:F2}, {_startPos.z:F2})");
 
-                // 5. 注册死亡检测回调
-                // 注意：Player.IsDead() 方法返回 _dead 状态
-                // 我们需要在 Update() 中轮询检查
-
+                // 5. 诊断信息
+                Track track = _testLevel.GetTrack();
+                string trackStatus = track != null ? "存在" : "不存在";
+                LogMessage($"[5/5] 诊断 - 轨道对象: {trackStatus}");
+                if (track != null)
+                {
+                    LogMessage($"[5/5] 诊断 - 轨道段数量: {track.GetSegments().Count}");
+                }
+                Part currentPart = _player.GetCurrentPart();
+                string initialPartStatus = currentPart != null ? "有" : "无";
+                LogMessage($"[5/5] 诊断 - 玩家初始轨道段: {initialPartStatus}");
                 LogMessage($"[5/5] 测试环境准备完成");
                 LogMessage("===========================================");
 
                 _isTesting = false;
-                _testResult = "测试环境已就绪，按 [T] 开始测试，按 [空格] 加速，按 [ESC] 结束测试";
+                _testResult = "测试环境已就绪，按 [T] 开始测试，自动运行";
             }
             catch (System.Exception e)
             {
@@ -215,6 +227,8 @@ namespace LuneRun.Tests
             _maxSpeed = 0f;
             _totalDistance = 0f;
             _playerDied = false;
+            _startPos = _player.GetPos().clone();
+            _lastPos = _startPos.clone();
 
             LogMessage("========== 开始核心玩法测试 ==========");
             LogMessage("测试内容：");
@@ -224,6 +238,13 @@ namespace LuneRun.Tests
             LogMessage("4. 碰撞检测");
             LogMessage("5. 收集物品");
             LogMessage("===========================================");
+
+            // 初始诊断
+            LogMessage($"[初始诊断] 玩家位置: ({_startPos.x:F2}, {_startPos.y:F2}, {_startPos.z:F2})");
+            LogMessage($"[初始诊断] 玩家是否在地面: {_player.IsOnGround()}");
+            Part part = _player.GetCurrentPart();
+            string partStatus = part != null ? "有" : "无";
+            LogMessage($"[初始诊断] 当前轨道段: {partStatus}");
         }
 
         /// <summary>
@@ -235,6 +256,8 @@ namespace LuneRun.Tests
 
             Vec3 currentPos = _player.GetPos();
             double currentSpeed = _player.GetSpeed();
+            bool isOnGround = _player.IsOnGround();
+            Part currentPart = _player.GetCurrentPart();
 
             // 记录最大速度
             if (currentSpeed > _maxSpeed)
@@ -248,7 +271,6 @@ namespace LuneRun.Tests
 
             // 检测跳跃（离开地面）
             bool wasOnGround = _lastPos.y <= currentPos.y + 0.1f;
-            bool isOnGround = _player.IsOnGround();
             if (wasOnGround && !isOnGround && currentPos.y > _startPos.y + 0.5f)
             {
                 _jumpCount++;
@@ -270,10 +292,46 @@ namespace LuneRun.Tests
                 LogError($"[致命错误] 玩家死亡，测试失败！");
             }
 
-            // 定期输出状态
+            // 定期输出详细诊断信息
             if (Time.frameCount % 60 == 0)
             {
+                string partStatus = currentPart != null ? "有" : "无";
+                bool spacePressed = _testLevel.GetSpaceKeySimulationPressed();
                 LogMessage($"[状态] 速度: {currentSpeed:F2}, 位置: ({currentPos.x:F2}, {currentPos.y:F2}, {currentPos.z:F2}), 在地面: {isOnGround}");
+                LogMessage($"[诊断] 当前轨道段: {partStatus}, 模拟空格键状态: {(spacePressed ? "按下" : "松开")}");
+            }
+
+            // 第一帧时的详细诊断
+            if (Time.frameCount == 60 && _maxSpeed <= 0.01f)
+            {
+                string partStatus = currentPart != null ? "有" : "无";
+                LogError($"[诊断] 测试开始2秒后，速度仍为 {currentSpeed:F2}");
+                LogError($"[诊断] 玩家是否在轨道上: {isOnGround}");
+                LogError($"[诊断] 当前轨道段: {partStatus}");
+                if (currentPart != null)
+                {
+                    LogError($"[诊断] 轨道段位置: ({currentPart.GetPos().x:F2}, {currentPart.GetPos().y:F2}, {currentPart.GetPos().z:F2})");
+                    LogError($"[诊断] 轨道段法线: ({currentPart.normal.x:F2}, {currentPart.normal.y:F2}, {currentPart.normal.z:F2})");
+                }
+
+                // 检查轨道是否正确生成
+                Track track = _testLevel.GetTrack();
+                if (track != null)
+                {
+                    LogError($"[诊断] 轨道段总数: {track.GetSegments().Count}");
+                    if (track.GetSegments().Count > 0)
+                    {
+                        LogError($"[诊断] 轨道已生成");
+                    }
+                    else
+                    {
+                        LogError($"[诊断] 轨道未生成！这是速度为0的原因之一！");
+                    }
+                }
+                else
+                {
+                    LogError($"[诊断] Track对象为null！");
+                }
             }
 
             _lastPos = currentPos.clone();
@@ -341,60 +399,64 @@ namespace LuneRun.Tests
         /// </summary>
         public void PrintTestReport()
         {
-            Debug.Log("\n");
-            Debug.Log("╔═══════════════════════════════════════════════════════════════╗");
-            Debug.Log("║                   核心玩法测试完整报告                          ║");
-            Debug.Log("╚═══════════════════════════════════════════════════════════════╝");
-            Debug.Log("\n");
+            System.Text.StringBuilder report = new System.Text.StringBuilder();
 
-            Debug.Log("【测试配置】");
-            Debug.Log($"  Level ID: {testLevelId}");
-            Debug.Log($"  测试时长: {testDuration} 秒");
-            Debug.Log($"  实际时长: {_testTimer:F2} 秒");
-            Debug.Log("\n");
+            report.AppendLine();
+            report.AppendLine("╔═══════════════════════════════════════════════════════════════╗");
+            report.AppendLine("║                   核心玩法测试完整报告                          ║");
+            report.AppendLine("╚═══════════════════════════════════════════════════════════════╝");
+            report.AppendLine();
 
-            Debug.Log("【测试结果】");
-            Debug.Log($"  状态: {_testResult}");
-            Debug.Log($"  跳跃次数: {_jumpCount}");
-            Debug.Log($"  落地次数: {_landCount}");
-            Debug.Log($"  最大速度: {_maxSpeed:F2}");
-            Debug.Log($"  移动距离: {_totalDistance:F2}");
-            Debug.Log($"  玩家死亡: {_playerDied}");
-            Debug.Log("\n");
+            report.AppendLine("【测试配置】");
+            report.AppendLine($"  Level ID: {testLevelId}");
+            report.AppendLine($"  测试时长: {testDuration} 秒");
+            report.AppendLine($"  实际时长: {_testTimer:F2} 秒");
+            report.AppendLine();
 
-            Debug.Log("【位置信息】");
+            report.AppendLine("【测试结果】");
+            report.AppendLine($"  状态: {_testResult}");
+            report.AppendLine($"  跳跃次数: {_jumpCount}");
+            report.AppendLine($"  落地次数: {_landCount}");
+            report.AppendLine($"  最大速度: {_maxSpeed:F2}");
+            report.AppendLine($"  移动距离: {_totalDistance:F2}");
+            report.AppendLine($"  玩家死亡: {_playerDied}");
+            report.AppendLine();
+
+            report.AppendLine("【位置信息】");
             if (_startPos != null)
             {
-                Debug.Log($"  起始位置: ({_startPos.x:F2}, {_startPos.y:F2}, {_startPos.z:F2})");
+                report.AppendLine($"  起始位置: ({_startPos.x:F2}, {_startPos.y:F2}, {_startPos.z:F2})");
             }
             if (_player != null && _player.GetPos() != null)
             {
                 Vec3 finalPos = _player.GetPos();
-                Debug.Log($"  结束位置: ({finalPos.x:F2}, {finalPos.y:F2}, {finalPos.z:F2})");
+                report.AppendLine($"  结束位置: ({finalPos.x:F2}, {finalPos.y:F2}, {finalPos.z:F2})");
             }
-            Debug.Log("\n");
+            report.AppendLine();
 
             if (_testErrors.Count > 0)
             {
-                Debug.Log("【错误列表】(" + _testErrors.Count + " 个错误)");
+                report.AppendLine($"【错误列表】({_testErrors.Count} 个错误)");
                 for (int i = 0; i < _testErrors.Count; i++)
                 {
-                    Debug.Log($"  [{i + 1}] {_testErrors[i]}");
+                    report.AppendLine($"  [{i + 1}] {_testErrors[i]}");
                 }
-                Debug.Log("\n");
+                report.AppendLine();
             }
 
-            Debug.Log("【详细日志】(" + _testLogs.Count + " 条记录)");
+            report.AppendLine($"【详细日志】({_testLogs.Count} 条记录)");
             for (int i = 0; i < _testLogs.Count; i++)
             {
-                Debug.Log($"  {i + 1}. {_testLogs[i]}");
+                report.AppendLine($"  {i + 1}. {_testLogs[i]}");
             }
-            Debug.Log("\n");
+            report.AppendLine();
 
-            Debug.Log("╔═══════════════════════════════════════════════════════════════╗");
-            Debug.Log("║                      报告结束                                   ║");
-            Debug.Log("╚═══════════════════════════════════════════════════════════════╝");
-            Debug.Log("\n");
+            report.AppendLine("╔═══════════════════════════════════════════════════════════════╗");
+            report.AppendLine("║                      报告结束                                   ║");
+            report.AppendLine("╚═══════════════════════════════════════════════════════════════╝");
+            report.AppendLine();
+
+            Debug.Log(report.ToString());
         }
 
         void OnGUI()

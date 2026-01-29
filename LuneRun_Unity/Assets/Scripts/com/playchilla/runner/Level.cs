@@ -9,7 +9,7 @@ using shared.math;
 
 namespace com.playchilla.runner
 {
-    public class Level : MonoBehaviour, IScoreCallback
+    public partial class Level : MonoBehaviour, IScoreCallback
     {
         private int _levelId;
         private bool _isHardware;
@@ -60,9 +60,11 @@ namespace com.playchilla.runner
             GameObject playerObj = new GameObject("Player");
             playerObj.transform.SetParent(_gameCont.transform);
             _player = playerObj.AddComponent<Player>();
-            Vec3 startPos = new Vec3(0, 1, 0); // Start 1 unit above track (was 2, too high)
+
+            // 按照AS代码逻辑：var loc1:*=this._dynamicTrack.getTrack().getStartPos().addXYZ(0, 0, 10);
+            Vec3 startPos = _track.GetStartPos().add(new Vec3(0, 0, 10));
+
             _player.Initialize(this, keyboard, mouse, startPos);
-            Debug.Log($"[Level] Player initialized at position: ({startPos.x}, {startPos.y}, {startPos.z})");
 
             // Get main camera
             Camera mainCamera = Camera.main;
@@ -252,6 +254,46 @@ namespace com.playchilla.runner
 
         private float _accumulatedTime = 0f;
 
+#if DEBUG
+        // 测试模拟字段和方法
+        private bool _simulateSpacePress = false;
+        private bool _simulateSpaceRelease = false;
+
+        public void SetSpaceKeySimulation(bool press, bool release)
+        {
+            _simulateSpacePress = press;
+            _simulateSpaceRelease = release;
+        }
+
+        public bool GetSpaceKeySimulationPressed()
+        {
+            return _simulateSpacePress;
+        }
+
+        private void ApplyTestInputSimulation()
+        {
+            if (_keyboardInput == null)
+            {
+                return;
+            }
+
+            if (_simulateSpacePress)
+            {
+                _keyboardInput.SetPress(32);
+            }
+            if (_simulateSpaceRelease)
+            {
+                _keyboardInput.SetRelease(32);
+            }
+        }
+
+        private void ResetSimulationFlags()
+        {
+            _simulateSpacePress = false;
+            _simulateSpaceRelease = false;
+        }
+#endif
+
         private void UpdateKeyboardInput()
         {
             // 检查 _keyboardInput 是否已初始化（单元测试可能没有初始化）
@@ -263,6 +305,12 @@ namespace com.playchilla.runner
 
             // Clear previous frame's pressed/released state
             _keyboardInput.Reset();
+
+#if DEBUG
+            // 应用测试模拟输入（测试扩展功能）
+            ApplyTestInputSimulation();
+            ResetSimulationFlags();
+#endif
 
             // Synchronize Unity Input with Flash KeyboardInput
             // Space key (code 32 in Flash/Air)

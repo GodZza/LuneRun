@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using com.playchilla.runner.track.segment;
+using shared.math;
 
 namespace com.playchilla.runner.track
 {
@@ -12,6 +13,15 @@ namespace com.playchilla.runner.track
         public Part GetConnectPart()
         {
             return _connectPart;
+        }
+
+        public Vec3 GetStartPos()
+        {
+            if (_segments.Count > 0)
+            {
+                return _segments[0].GetConnectPart().GetPos();
+            }
+            return new Vec3(0, 0, 0);
         }
 
         public Segment GetLastSegment()
