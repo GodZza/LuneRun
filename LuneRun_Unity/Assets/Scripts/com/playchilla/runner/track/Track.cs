@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using com.playchilla.runner.track.segment;
 using shared.math;
+using System.Linq;
 
 namespace com.playchilla.runner.track
 {
@@ -74,30 +75,15 @@ namespace com.playchilla.runner.track
                 return null;
             }
 
-            Part closest = null;
-            double minDistSqr = double.MaxValue;
-            int totalParts = 0;
+            // 使用 LINQ 的 SelectMany 扁平化嵌套集合，然后通过 OrderBy 按距离排序
+            var closestPart = _segments
+                .SelectMany(segment => segment.GetParts()) // 将嵌套集合展平
+                .Select(part => new { Part = part, DistanceSqr = position.distanceSqr(part.GetPos()) }) // 投影包含距离信息
+                .OrderBy(x => x.DistanceSqr) // 按平方距离升序排列
+                .FirstOrDefault(); // 取第一个（距离最近的）
 
-            foreach (Segment segment in _segments)
-            {
-                foreach (Part part in segment.GetParts())
-                {
-                    totalParts++;
-                    double distSqr = position.distanceSqr(part.pos);
-                    if (distSqr < minDistSqr)
-                    {
-                        minDistSqr = distSqr;
-                        closest = part;
-                    }
-                }
-            }
 
-            if (Time.frameCount % 30 == 0)
-            {
-                Debug.Log($"[Track.GetClosestPart] segments={_segments.Count}, totalParts={totalParts}, closest={(closest != null ? $"pos=({closest.pos.x:F2}, {closest.pos.y:F2}, {closest.pos.z:F2}), dist={System.Math.Sqrt(minDistSqr):F2}" : "null")}");
-            }
-
-            return closest;
+            return closestPart?.Part;
         }
     }
 }

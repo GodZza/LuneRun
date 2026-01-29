@@ -4,51 +4,60 @@ using shared.math;
 using com.playchilla.runner.track;
 using com.playchilla.runner.track.entity;
 using Random = UnityEngine.Random;
+using System.Linq;
 
 
 namespace com.playchilla.runner.player
 {
     public class Player : MonoBehaviour
     {
-        private Level _level;
-        private KeyboardInput _keyboard;
-        private MouseInput _mouse;
         private Vec3 _pos;
         private Vec3 _startPos;
-        private World _world;
-        private Track _track;
-        private bool _onGround;
-        private bool _dead;
-        private bool _hasCompleted;
-        private double _speed;
         private Vec3 _vel;
-        private Part _currentPart;
-        private IPlayerListener _listener;
-        private AudioSource _breathSound;
-        private bool _breathOn;
-        private int _fallTime;
-        
+
         private const double _MaxSpeed = 3.8;
         private const double _g = 0.14; // per tick
-        
+
+        private Track _track;
+        private KeyboardInput _keyboard;
+        private Part _currentPart;
+        private int _fallTime;
+        private bool _onGround;
+        private IPlayerListener _listener;
+
+        private MouseInput _mouse;
+        private bool _hasCompleted;
+        private bool _dead;
+        private Level _level;
+        private double _speed;
+
+
+        private World _world => _level.GetWorld(); // 用于判断碰撞加速带
+
+        private bool _breathOn;
+
+
+
         public Player Initialize(Level level, KeyboardInput keyboard, MouseInput mouse, Vec3 startPos)
         {
             _level = level;
             _track = level.GetTrack();
             _keyboard = keyboard;
             _mouse = mouse;
-            _pos = startPos.clone();
+
             _startPos = startPos.clone();
+            _pos = startPos.clone();
+            _pos.y = 151;
+
             _vel = new Vec3(0, 0, 0); // Initialize velocity
             _speed = 0; // Initialize speed
-            _world = level.GetWorld();
             // Initialize breath sound placeholder
-            _breathSound = gameObject.AddComponent<AudioSource>();
+
             Debug.Log($"[Player.Initialize] Player initialized at pos=({_pos.x}, {_pos.y}, {_pos.z}), track={(_track != null ? "found" : "null")}");
             return this;
         }
         
-        public Vec3 GetPos() => _pos;
+        public Vec3 GetPos() => _pos; //?s
         
         public bool IsOnGround() => _onGround;
         public double GetSpeedAlpha() => _vel.length() / _MaxSpeed;
@@ -63,18 +72,20 @@ namespace com.playchilla.runner.player
         // Main update method called each frame (or tick)
         // In Unity test mode, physics is handled by PlayerController
         // This method is only used for arm animation state
-        public void Tick(int deltaTime)
+        public void Tick(int tick)
         {
-            // Debug: Show current position and state
-            if (Time.frameCount % 30 == 0)
-            {
-                Debug.Log($"[Player.Tick] pos=({_pos.x:F2}, {_pos.y:F2}, {_pos.z:F2}), vel=({_vel.x:F2}, {_vel.y:F2}, {_vel.z:F2}), _onGround={_onGround}, _currentPart={(_currentPart != null ? "found" : "null")}");
-            }
+            _currentPart ??= _track.GetClosestPart(_pos);
+
 
             // Flash physics system - restore full physics calculation
             _setWantedSpeeds();
             _clip();
             _entityInteraction();
+
+            if(_pos.y < 1)
+            {
+                _dead = true;
+            }
 
             if (_onGround)
             {
@@ -90,29 +101,59 @@ namespace com.playchilla.runner.player
                 }
             }
         }
-        
+
+        internal void _entityInteraction()
+        {
+            var colliders = UnityEngine.Physics.OverlapSphere(_pos, 1);
+            if (colliders == null || colliders.Length == 0) return;
+
+            var closestCollider = colliders.OrderBy(col => Vector3.Distance(_pos, col.transform.position)).FirstOrDefault();
+
+            if (closestCollider != null)
+            {
+                float closestDistance = Vector3.Distance(_pos, closestCollider.transform.position);
+                Debug.Log("最近的物体是: " + closestCollider.gameObject.name + "，距离为: " + closestDistance);
+
+                if ((object)closestCollider is SpeedEntity se) // TODO:
+                {
+                    _vel.scaleSelf(1.2);
+                    se.Remove();
+                }
+            }
+            return;
+            //  旧代码
+            if (_world == null) return; // Safety check
+
+            RunnerEntity closest = _world.GetClosestEntity(_pos, 1);
+            if (closest is SpeedEntity)
+            {
+                _vel.scaleSelf(1.2);
+                closest.Remove();
+            }
+        }
+
         internal void _setWantedSpeeds()
         {
-            bool loc1 = _keyboard.IsDown((int)KeyCode.Space) || _mouse.IsDown();
+            var down = _keyboard.IsDown(KeyCode.Space) || _mouse.IsDown();
+            var up   = _keyboard.IsReleased((int)KeyCode.Space) || _mouse.HasRelease();
             if (_onGround)
             {
-                bool loc2 = _keyboard.IsReleased((int)KeyCode.Space) || _mouse.HasRelease();
-                _setWantedVelOnGround(loc1, loc2);
+                _setWantedVelOnGround(down, up);
             }
             else
             {
-                _setWantedVelInAir(loc1);
+                _setWantedVelInAir(down);
             }
         }
         
-        internal void _setWantedVelOnGround(bool arg1, bool arg2)
+        internal void _setWantedVelOnGround(bool down, bool up)
         {
             if (_currentPart == null)
             {
                 // Default behavior if no current part
                 _speed = 0;
                 _vel.copy(new Vec3(0, 0, 1)); // Default forward direction
-                if (arg2)
+                if (up)
                 {
                     _vel.y = _vel.y + 4;
                     _onJump();
@@ -122,36 +163,36 @@ namespace com.playchilla.runner.player
 
             _speed = _vel.dot(_currentPart.dir);
             _vel.copy(_currentPart.dir.scale(_speed));
-            if (arg1)
+            if (down)
             {
                 _fallTime = 0;
                 if (_speed < _MaxSpeed)
                 {
                     _vel.addSelf(_currentPart.dir.scale(0.1));
                 }
-                double loc1 = -0.1 * _currentPart.dir.y;
+                var scale = -0.1 * _currentPart.dir.y;
                 if (_speed < _MaxSpeed * 1.4)
                 {
-                    if (loc1 > 0)
+                    if (scale > 0)
                     {
-                        _vel.addSelf(_currentPart.dir.scale(loc1));
+                        _vel.addSelf(_currentPart.dir.scale(scale));
                     }
                     else
                     {
-                        _vel.addSelf(_currentPart.dir.scale(loc1));
+                        _vel.addSelf(_currentPart.dir.scale(scale));
                     }
                 }
             }
-            else if (arg2)
+            else if (up)
             {
                 _vel.y = _vel.y + System.Math.Min(4, 1 + _speed);
                 _onJump();
             }
         }
         
-        internal void _setWantedVelInAir(bool arg1)
+        internal void _setWantedVelInAir(bool down)
         {
-            if (arg1)
+            if (down)
             {
                 _vel.y = System.Math.Min(0, _vel.y);
                 _vel.y = _vel.y - 2 * _g;
@@ -163,119 +204,80 @@ namespace com.playchilla.runner.player
         internal void _clip()
         {
             // Flash physics system: use track.getClosestPart() for collision detection
-            Vec3 loc1 = _pos.add(_vel);
-            Part loc2 = _track.GetClosestPart(loc1);
+            var newPos = _pos.add(_vel);
+            var part = _track.GetClosestPart(newPos);
 
-            if (loc2 != null)
+            var surfacePos = default(Vec3);
+
+            if (part != null)
             {
-                // Calculate distance to surface using dot product with normal
-                Vec3 offset = loc1.sub(loc2.pos);
-                double distanceToSurface = offset.dot(loc2.normal);
-
-                // Calculate horizontal distance to part center
-                Vec3 horizontalOffset = offset.clone();
-                horizontalOffset.y = 0;
-                double horizontalDist = horizontalOffset.length();
-
-                // Debug output
-                if (Time.frameCount % 30 == 0)
+                var loc3 = newPos.add(part.normal.scale(14));
+                var loc4 = newPos.sub(part.normal.scale(2));
+                surfacePos = part.GetSurface(loc3, loc4);
+                var willOnGround = surfacePos != null;
+                if (willOnGround)
                 {
-                    Debug.Log($"[Player._clip] loc1=({loc1.x:F2}, {loc1.y:F2}, {loc1.z:F2}), loc2.pos=({loc2.pos.x:F2}, {loc2.pos.y:F2}, {loc2.pos.z:F2}), distanceToSurface={distanceToSurface:F2}, horizontalDist={horizontalDist:F2}");
+                    this._currentPart = part;
                 }
-
-                // Ground detection: player is within vertical and horizontal bounds of the part
-                // Vertical: between -1 and 2 units above/below surface
-                // Horizontal: within 3 units of part center
-                bool loc6 = distanceToSurface >= -1 && distanceToSurface < 3 && horizontalDist < 3;
-
-                if (loc6)
-                {
-                    _currentPart = loc2;
-                }
-
-                if (!_onGround && loc6)
+                if (!_onGround && willOnGround)
                 {
                     _onLand();
-                    Debug.Log($"[Player._clip] Player landed! distanceToSurface={distanceToSurface:F2}");
                 }
+                _onGround = willOnGround;
+            }
 
-                _onGround = loc6;
+            if (_onGround)
+            {
+                // Stick to surface
+                _pos.copy(surfacePos);
+                _pos.y += 0.1f; // Slight offset above surface
 
-                if (_onGround)
+                // Edge constraint: keep player within track bounds
+                var loc7 = _currentPart.GetPos();
+                var loc8 = _pos.sub(loc7);
+                var loc9 = loc8.dot(_currentPart.right);
+                if (System.Math.Abs(loc9) > 2)
                 {
-                    // Stick to surface
-                    _pos.copy(loc2.pos);
-                    _pos.y += 0.1f; // Slight offset above surface
-
-                    // Edge constraint: keep player within track bounds
-                    Vec3 loc7 = _currentPart.GetPos();
-                    Vec3 loc8 = _pos.sub(loc7);
-                    // Use direction as proxy for right (perpendicular to forward and up)
-                    Vec3 right = new Vec3(-loc2.dir.z, 0, loc2.dir.x);
-                    double loc9 = loc8.dot(right);
-                    if (System.Math.Abs(loc9) > 2)
-                    {
-                        Vec3 offsetConstraint = right.rescale(loc9 > 0 ? -0.4 : 0.4);
-                        _pos.addSelf(offsetConstraint);
-                    }
-                }
-                else
-                {
-                    // Free fall in air
-                    _pos.addSelf(_vel);
+                    Vec3 offsetConstraint = _currentPart.right.rescale(loc9 > 0 ? -0.4 : 0.4);
+                    _pos.addSelf(offsetConstraint);
                 }
             }
             else
             {
-                // No track found, free fall
-                Debug.LogWarning($"[Player._clip] No closest part found at pos=({loc1.x:F2}, {loc1.y:F2}, {loc1.z:F2})");
+                // Free fall in air
                 _pos.addSelf(_vel);
             }
         }
         
-        internal void _entityInteraction()
-        {
-            if (_world == null) return; // Safety check
-
-            RunnerEntity closest = _world.GetClosestEntity(_pos, 1);
-            if (closest is SpeedEntity)
-            {
-                _vel.scaleSelf(1.2);
-                closest.Remove();
-            }
-        }
+       
         
         internal void _onJump()
         {
+            com.playchilla.runner.Audio.Sound.getSound(SBreath).setVolumeMod(0.25, 200);
             // Audio.Sound.getSound(SBreath).setVolumeMod(0.25, 200);
         }
         
         internal void _onLand()
         {
-            Vec3 loc1 = _vel.clone();
+            var loc1 = _vel.clone();
             if (loc1.lengthSqr() < Vec3Const.EpsilonSqr)
             {
                 return;
             }
             loc1.normalizeSelf();
 
-            // Check if currentPart is available
-            if (_currentPart != null)
+            var loc2 = System.Math.Abs(loc1.dot(_currentPart.normal));
+            _listener?.onLand(loc2);
+            if (loc2 > 0.26)
             {
-                double loc2 = System.Math.Abs(loc1.dot(_currentPart.normal));
-                if (_listener != null)
-                {
-                    _listener.onLand(loc2);
-                }
+                //再来一次？？ 震动？？
+                _listener?.onLand(loc2);
             }
         }
         
         public void Destroy()
         {
-            if (_breathSound != null)
-            {
-                _breathSound.Stop();
-            }
+            com.playchilla.runner.Audio.Sound.getSound(SBreath).stop(0);
         }
         
         // Helper methods for external access
@@ -289,6 +291,8 @@ namespace com.playchilla.runner.player
         public void SetSpeed(double speed) { _speed = speed; }
 
         public void SetCurrentPart(Part part) { _currentPart = part; }
+
+        const string SBreath = nameof(SBreath);
     }
 
 }

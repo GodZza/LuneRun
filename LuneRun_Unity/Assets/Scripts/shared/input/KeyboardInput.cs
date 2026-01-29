@@ -30,7 +30,7 @@ namespace shared.input
             _released.Add(keyCode);
             _isDown[keyCode] = false;
         }
-
+        public bool IsDown(KeyCode keyCode) => IsDown((int)keyCode);
         public bool IsDown(int keyCode)
         {
             return _isDown.ContainsKey(keyCode) && _isDown[keyCode];

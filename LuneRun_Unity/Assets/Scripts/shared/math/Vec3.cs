@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace shared.math
 {
     public class Vec3 : Vec3Const
@@ -143,6 +145,15 @@ namespace shared.math
             return this;
         }
 
+        public Vec3 cross(Vec3Const other)
+        {
+            double nx = _y * other.z - _z * other.y;
+            double ny = _z * other.x - _x * other.z;
+            double nz = _x * other.y - _y * other.x;
+
+            return new Vec3(nx,ny, nz);
+        }
+
         public Vec3 lerp(Vec3Const other, double alpha)
         {
             return new Vec3(
@@ -157,9 +168,9 @@ namespace shared.math
             return string.Format("Vec3({0}, {1}, {2})", _x, _y, _z);
         }
 
-        //public static implicit operator Vec3(Vec3Const v)
-        //{
-        //    return new Vec3(v.x, v.y, v.z);
-        //}
+        public static implicit operator Vector3(Vec3 v)
+        {
+            return new Vector3((float)v.x, (float)v.y, (float)v.z);
+        }
     }
 }
