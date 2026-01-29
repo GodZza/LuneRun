@@ -347,7 +347,7 @@ namespace com.playchilla.runner
             if (_dynamicTrack != null && _player != null)
             {
                 Vec3 playerPos = _player.GetPos();
-                _dynamicTrack.Update(playerPos);
+                //_dynamicTrack.Update(playerPos);
             }
 
             // Flash physics system: update at 30fps (33ms per tick) to match Flash frame rate

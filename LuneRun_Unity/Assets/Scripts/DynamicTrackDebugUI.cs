@@ -53,7 +53,7 @@ namespace DebugUI
             {
                 if (_dynamicTrack != null)
                 {
-                    _dynamicTrack.SetDebugMode(true);
+                    //_dynamicTrack.SetDebugMode(true);
                 }
             }
 

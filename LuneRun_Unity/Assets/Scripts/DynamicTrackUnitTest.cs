@@ -728,7 +728,7 @@ namespace LuneRun.Tests
             _playerPosition.z += deltaZ;
             _testTimer += Time.deltaTime;
 
-            _dynamicTrack.Update(_playerPosition);
+            //_dynamicTrack.Update(_playerPosition);
 
             if (_playerPosition.z - _initialZ >= testDistance)
             {
@@ -751,7 +751,7 @@ namespace LuneRun.Tests
             _playerPosition.z += deltaZ;
             _testTimer += Time.deltaTime;
 
-            _dynamicTrack.Update(_playerPosition);
+            //_dynamicTrack.Update(_playerPosition);
 
             // 性能测试运行指定距离
             if (_playerPosition.z - _initialZ >= testDistance)

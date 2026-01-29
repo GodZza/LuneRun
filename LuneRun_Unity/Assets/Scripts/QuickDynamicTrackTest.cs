@@ -49,7 +49,7 @@ namespace LuneRun.Tests
                 for (int i = 0; i < 10; i++)
                 {
                     playerPos.z += 20;
-                    dynamicTrack.Update(playerPos);
+                    //dynamicTrack.Update(playerPos);
                 }
                 Debug.Log($"✓ [5/6] Player moved from Z=0 to Z={playerPos.z}");
 

@@ -22,7 +22,6 @@ namespace com.playchilla.runner.track
         private TrackGenerator _generator;
         private Level _level;
         
-        private int _levelId;
 
         // 配置参数
         private int _loadForward = 6;      // 向前加载的轨道段数量
@@ -34,8 +33,6 @@ namespace com.playchilla.runner.track
         private int _lastGenerateLevelId = -1;  // 上次生成时的levelId
         private int _generatedForLevel = 0;
 
-        // 调试选项
-        private bool _debugMode = true;    // 启用详细调试日志
         private int _loadedSegments = 0;    // 统计：已加载的段数
         private int _removedSegments = 0;   // 统计：已移除的段数
 
@@ -55,15 +52,9 @@ namespace com.playchilla.runner.track
             _level = level;
             _loadForward = loadForward;
             _keepBackward = keepBackward;
-            _levelId = level.GetLevelId();
 
             // 初始化生成器
             InitializeGenerators();
-
-            // 生成初始轨道
-            GenerateInitialTrack();
-
-            Debug.Log($"[DynamicTrack] Created with levelId={_levelId}, loadForward={_loadForward}, keepBackward={_keepBackward}");
         }
 
         /// <summary>
@@ -118,24 +109,24 @@ namespace com.playchilla.runner.track
             // 如果levelId改变了，更新随机数seed（与AS代码一致）
             if (levelId != _lastGenerateLevelId)
             {
-                var seed = _levelId + 1;
+                var seed = levelId + 1;
 
                 // 特殊levelId的seed处理
-                if (_levelId == 26)
+                if (levelId == 26)
                 {
                     seed = 101;
                 }
-                else if (_levelId == 28)
+                else if (levelId == 28)
                 {
                     seed = 100;
                 }
-                else if (_levelId == 32)
+                else if (levelId == 32)
                 {
                     seed = 105;
                 }
 
                 _rnd.SetSeed(seed);
-                _lastGenerateLevelId = _levelId;
+                _lastGenerateLevelId = levelId;
                 _segmentCount = 0;  // 重置生成的段数
             }
 
@@ -183,81 +174,6 @@ namespace com.playchilla.runner.track
             _segmentCount += 1;
         }
 
-        /// <summary>
-        /// 生成初始轨道段
-        /// </summary>
-        private void GenerateInitialTrack()
-        {
-            // 设置初始seed（与AS代码一致）
-            int seed = _levelId + 1;
-            if (_levelId != 26)
-            {
-                if (_levelId != 28)
-                {
-                    if (_levelId == 32)
-                    {
-                        seed = 105;
-                    }
-                    else
-                    {
-                        seed = 100;
-                    }
-                }
-                else
-                {
-                    seed = 101;
-                }
-            }
-            else
-            {
-                seed = 101;
-            }
-
-            _rnd.SetSeed(seed);
-            _lastGenerateLevelId = _levelId;
-            _segmentCount = 0;
-
-            // 根据关卡ID生成不同数量的初始段
-            int initialSegments = _loadForward + _keepBackward;
-            double difficulty = GetDifficulty();
-
-            Debug.Log($"[DynamicTrack] Generating initial track with {initialSegments} segments, difficulty={difficulty:F2}, seed={seed}");
-
-            // 创建起始连接部分并设置到 Track
-            Part connectPart = CreateStartConnectPart();
-            _track.SetConnectPart(connectPart);
-
-            Debug.Log($"[DynamicTrack] Initial segments before generation: {_track.GetSegments().Count}");
-
-            // 生成初始轨道段
-            for (int i = 0; i < initialSegments; i++)
-            {
-                _generator.Generate(_track, _rnd, difficulty, _segmentCount, _levelId);
-                _segmentCount++;
-                _loadedSegments++;
-
-                Debug.Log($"[DynamicTrack] Generated segment {i+1}/{initialSegments}, total segments: {_track.GetSegments().Count}");
-            }
-
-            Debug.Log($"[DynamicTrack] Initial track generated with {_track.GetSegments().Count} segments");
-        }
-
-        /// <summary>
-        /// 创建起始连接部分
-        /// </summary>
-        private Part CreateStartConnectPart()
-        {
-            Vec3 startPos = new Vec3(0, 0, 0);
-            Vec3 startDir = new Vec3(0, 0, 1);
-            Vec3 startUp = new Vec3(0, 1, 0);
-
-            Part connectPart = new Part(null, startPos, startDir, startUp, new GameObject(), 0, 0);
-            _track.GetSegments().Insert(0, new ForwardSegment("Start", 0, connectPart,
-                                                             startDir, 0, 0, 5, _level.GetMaterials(), _levelId));
-
-            return connectPart;
-        }
-
         public bool Update(com.playchilla.runner.track.Part part, int levelId, int maxSegment)
         {
             this.TryRemove(part);
@@ -266,226 +182,6 @@ namespace com.playchilla.runner.track
         }
 
 
-        /// <summary>
-        /// 更新动态轨道（每帧调用）
-        /// </summary>
-        /// <param name="playerPosition">玩家当前位置</param>
-        public void Update(Vec3 playerPosition)
-        {
-            if (playerPosition == null)
-            {
-                Debug.LogWarning("[DynamicTrack.Update] Player position is null, skipping update");
-                return;
-            }
-
-            // 检查是否需要加载新轨道段（添加循环限制，防止死循环）
-            int loadAttempts = 0;
-            int maxLoadAttempts = 10; // 单次 Update 最多加载 10 个段
-
-            while (ShouldLoadMore(playerPosition) && loadAttempts < maxLoadAttempts)
-            {
-                LoadNextSegment();
-                loadAttempts++;
-            }
-
-            if (loadAttempts >= maxLoadAttempts)
-            {
-                Debug.LogWarning($"[DynamicTrack] Reached max load attempts ({maxLoadAttempts}), stopping to prevent infinite loop");
-            }
-
-            // 检查是否需要移除旧轨道段（添加循环限制，防止死循环）
-            int removeAttempts = 0;
-            int maxRemoveAttempts = 10; // 单次 Update 最多移除 10 个段
-
-            while (ShouldRemoveOld(playerPosition) && removeAttempts < maxRemoveAttempts)
-            {
-                RemoveOldestSegment();
-                removeAttempts++;
-            }
-
-            if (removeAttempts >= maxRemoveAttempts)
-            {
-                Debug.LogWarning($"[DynamicTrack] Reached max remove attempts ({maxRemoveAttempts}), stopping to prevent infinite loop");
-            }
-        }
-
-        /// <summary>
-        /// 检查是否需要加载新轨道段
-        /// </summary>
-        private bool ShouldLoadMore(Vec3 playerPosition)
-        {
-            List<Segment> segments = _track.GetSegments();
-            if (segments.Count == 0)
-                return true;
-
-            // 获取最后一个轨道段
-            Segment lastSegment = segments[segments.Count - 1];
-            if (lastSegment == null || lastSegment.GetLastPart() == null)
-                return true;
-
-            // 计算玩家到最后一个段的距离
-            Vec3 lastSegmentEnd = lastSegment.GetLastPart().pos;
-            double distance = playerPosition.sub(lastSegmentEnd).length();
-
-            bool shouldLoad = distance < _loadDistance;
-
-            if (Time.frameCount % 60 == 0 && shouldLoad)
-            {
-                Debug.Log($"[DynamicTrack] Player near end (distance={distance:F2}), should load more, segments={_track.GetSegments().Count}");
-            }
-
-            if (_debugMode && shouldLoad)
-            {
-                Debug.Log($"[DynamicTrack] ShouldLoadMore: distance={distance:F2} < {_loadDistance:F2} = {shouldLoad}");
-            }
-
-            return shouldLoad;
-        }
-
-        /// <summary>
-        /// 检查是否需要移除旧轨道段
-        /// </summary>
-        private bool ShouldRemoveOld(Vec3 playerPosition)
-        {
-            List<Segment> segments = _track.GetSegments();
-            if (segments.Count <= _keepBackward)
-                return false;
-
-            // 获取第一个轨道段
-            Segment firstSegment = segments[0];
-            if (firstSegment == null || firstSegment.GetLastPart() == null)
-                return false;
-
-            // 计算玩家到第一个段的距离
-            Vec3 firstSegmentEnd = firstSegment.GetLastPart().pos;
-            double distance = playerPosition.sub(firstSegmentEnd).length();
-
-            bool shouldRemove = distance > _removeDistance;
-
-            if (Time.frameCount % 60 == 0 && shouldRemove)
-            {
-                Debug.Log($"[DynamicTrack] Player far from start (distance={distance:F2}), should remove old segment");
-            }
-
-            return shouldRemove;
-        }
-
-        /// <summary>
-        /// 加载下一个轨道段
-        /// </summary>
-        private void LoadNextSegment()
-        {
-            // 如果levelId改变了，更新随机数seed（与AS代码一致）
-            if (_levelId != _lastGenerateLevelId)
-            {
-                int seed = _levelId + 1;
-
-                // 特殊levelId的seed处理
-                if (_levelId != 26)
-                {
-                    if (_levelId != 28)
-                    {
-                        if (_levelId == 32)
-                        {
-                            seed = 105;
-                        }
-                        else
-                        {
-                            seed = 100;
-                        }
-                    }
-                    else
-                    {
-                        seed = 101;
-                    }
-                }
-                else
-                {
-                    seed = 101;
-                }
-
-                _rnd.SetSeed(seed);
-                _lastGenerateLevelId = _levelId;
-                _segmentCount = 0;  // 重置生成的段数
-            }
-
-            double difficulty = GetDifficulty();
-
-            Debug.Log($"[DynamicTrack] Loading segment #{_segmentCount}, difficulty={difficulty:F2}");
-
-            // 使用生成器生成新轨道段
-            _generator.Generate(_track, _rnd, difficulty, _segmentCount, _levelId);
-            _segmentCount++;
-            _loadedSegments++;
-
-            if (_debugMode)
-            {
-                var lastSegment = _track.GetSegments()[_track.GetSegments().Count - 1];
-                Debug.Log($"[DynamicTrack] Generated segment type: {lastSegment.GetType().Name}");
-            }
-
-            // 连接新段
-            ConnectLastSegments();
-
-            Debug.Log($"[DynamicTrack] Segment loaded, total segments={_track.GetSegments().Count}, total loaded={_loadedSegments}");
-        }
-
-        /// <summary>
-        /// 连接最后两个轨道段
-        /// </summary>
-        private void ConnectLastSegments()
-        {
-            List<Segment> segments = _track.GetSegments();
-            if (segments.Count < 2)
-                return;
-
-            Segment prevSegment = segments[segments.Count - 2];
-            Segment currSegment = segments[segments.Count - 1];
-
-            Part prevLastPart = prevSegment.GetLastPart();
-            Part currConnectPart = currSegment.GetConnectPart();
-
-            if (prevLastPart != null && currConnectPart != null)
-            {
-                currConnectPart.previous = prevLastPart;
-                prevLastPart.next = currConnectPart;
-            }
-        }
-
-        /// <summary>
-        /// 移除最旧的轨道段
-        /// </summary>
-        private void RemoveOldestSegment()
-        {
-            List<Segment> segments = _track.GetSegments();
-            if (segments.Count == 0)
-                return;
-
-            Segment oldestSegment = segments[0];
-            _removedSegments++;
-
-            if (_debugMode)
-            {
-                Debug.Log($"[DynamicTrack] Removing segment type: {oldestSegment.GetType().Name}, total removed={_removedSegments}");
-            }
-
-            Debug.Log($"[DynamicTrack] Removing segment: {oldestSegment}, remaining before={segments.Count}");
-
-            // 移除段
-            _track.RemoveSegment(oldestSegment);
-
-            Debug.Log($"[DynamicTrack] Segment removed, remaining segments={_track.GetSegments().Count}, total removed={_removedSegments}");
-        }
-
-        /// <summary>
-        /// 获取当前难度（0-1）
-        /// </summary>
-        private double GetDifficulty()
-        {
-            // 难度基于关卡ID：levelId / 50，最大为1.0
-            double difficulty = (double)_levelId / 50.0;
-            return System.Math.Min(1.0, difficulty);
-        }
 
         /// <summary>
         /// 获取轨道实例
@@ -494,28 +190,12 @@ namespace com.playchilla.runner.track
         {
             return _track;
         }
-
-        /// <summary>
-        /// 获取已生成的轨道段总数
-        /// </summary>
-        public int GetSegmentCount()
+        Part _lastLevelPart;
+        public bool IsLastLevelPart(Part part)
         {
-            return _segmentCount;
+            return part == this._lastLevelPart;
         }
 
-        /// <summary>
-        /// 获取起始位置
-        /// </summary>
-        public Vec3 GetStartPos()
-        {
-            Part connectPart = _track.GetConnectPart();
-            if (connectPart != null)
-            {
-                return connectPart.pos.add(new Vec3(0, 2, 0)); // 在连接点上方2单位
-            }
-
-            return new Vec3(0, 2, 0); // 默认位置
-        }
 
         /// <summary>
         /// 获取统计信息（用于验证）
@@ -523,8 +203,6 @@ namespace com.playchilla.runner.track
         public string GetStatistics()
         {
             return $"DynamicTrack Statistics:\n" +
-                   $"  Level ID: {_levelId}\n" +
-                   $"  Difficulty: {GetDifficulty():F2}\n" +
                    $"  Total Generated: {_segmentCount}\n" +
                    $"  Total Loaded: {_loadedSegments}\n" +
                    $"  Total Removed: {_removedSegments}\n" +
@@ -535,13 +213,5 @@ namespace com.playchilla.runner.track
                    $"  Remove Distance: {_removeDistance:F1}";
         }
 
-        /// <summary>
-        /// 设置调试模式
-        /// </summary>
-        public void SetDebugMode(bool enabled)
-        {
-            _debugMode = enabled;
-            Debug.Log($"[DynamicTrack] Debug mode: {(enabled ? "ENABLED" : "DISABLED")}");
-        }
     }
 }
