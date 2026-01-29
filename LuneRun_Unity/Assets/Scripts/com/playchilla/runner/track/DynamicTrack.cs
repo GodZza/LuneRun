@@ -8,11 +8,7 @@ using UnityEngine.Assertions;
 
 namespace com.playchilla.runner.track
 {
-    class TutorialGenerator 
-    {
-        public TutorialGenerator(Track track, global::shared.math.Random rnd, Materials materials) { }
-        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int segmentCount) { }
-    } // TODO：
+   
 
 
     /// <summary>
