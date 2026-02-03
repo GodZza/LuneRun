@@ -25,13 +25,13 @@ namespace com.playchilla.runner.track.generator
 
         public void Generate(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
         {
-            double direction = (2 * _rnd.NextDouble() - 1);
-            double rotationY = (0.2 + difficulty) * direction * 180;
+            var direction = (2 * _rnd.NextDouble() - 1);
+            var rotationY = (0.2 + difficulty) * direction * 180;
             int parts = 10 + (int)(10 * Mathf.Abs((float)direction)) + (int)(_rnd.NextDouble() * (15 - 10 * difficulty));
-            double y = GetNextY(difficulty);
+            var y = GetNextY(difficulty);
             
             AddForwardSegment(y, 0, 0, 2, segmentCount);
-            AddForwardSegment(y, rotationY, 0, parts, segmentCount);
+            AddForwardSegment(y, (float)rotationY, 0, parts, segmentCount);
         }
     }
 }

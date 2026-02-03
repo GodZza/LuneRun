@@ -172,5 +172,10 @@ namespace shared.math
         {
             return new Vector3((float)v.x, (float)v.y, (float)v.z);
         }
+
+        public static implicit operator Vec3(Vector3 v)
+        {
+            return new Vec3((float)v.x, (float)v.y, (float)v.z);
+        }
     }
 }

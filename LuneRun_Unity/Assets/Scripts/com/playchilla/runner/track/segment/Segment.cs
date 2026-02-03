@@ -81,8 +81,7 @@ namespace com.playchilla.runner.track.segment
         public void Remove()
         {
             _isRemoved = true;
-            if (_nextSegment != null)
-                _nextSegment._connectPart = null;
+            _nextSegment._connectPart = null;
         }
 
         public bool IsRemoved()

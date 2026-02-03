@@ -20,7 +20,7 @@ namespace com.playchilla.runner.track.generator
 
         public void Generate(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
         {
-            double y = GetNextY(difficulty);
+            var y = GetNextY(difficulty);
             AddForwardSegment(y, 0, 0, 3, segmentCount);
         }
     }

@@ -29,8 +29,8 @@ namespace com.playchilla.runner.track.generator
 
         public void Generate(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
         {
-            double y = GetNextY(difficulty);
-            int parts = _parts != -1 ? _parts : 13 + (int)(_rnd.NextDouble() * 30);
+            var y = GetNextY(difficulty);
+            var parts = _parts != -1 ? _parts : 13 + (int)(_rnd.NextDouble() * 30);
             
             if (_rnd.NextDouble() < 0.4 * difficulty && segmentCount > 16)
             {

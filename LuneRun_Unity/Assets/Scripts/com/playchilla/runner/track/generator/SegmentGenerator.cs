@@ -20,7 +20,7 @@ namespace com.playchilla.runner.track.generator
             _materials = materials;
         }
 
-        public Segment AddForwardSegment(double y, double rotationY, double rotationZ, int parts, int segmentCount, bool addStartPart = true, bool addEndPart = true)
+        public Segment AddForwardSegment(float y, float rotationY, float rotationZ, int parts, int segmentCount, bool addStartPart = true, bool addEndPart = true)
         {
             Part connectPart = _track.GetConnectPart();
             if (connectPart == null)
@@ -48,7 +48,7 @@ namespace com.playchilla.runner.track.generator
             return _segment;
         }
 
-        public double GetNextY(double difficulty)
+        public float GetNextY(double difficulty)
         {
             Segment lastSegment = _track.GetLastSegment();
             if (lastSegment == null)
@@ -75,11 +75,11 @@ namespace com.playchilla.runner.track.generator
                     double minY = UnityEngine.Mathf.Max(50, (float)(targetY - targetY * 2 * progress));
 
                     // Return random Y between minY and targetY
-                    return minY + _rnd.NextDouble() * (targetY - minY);
+                    return (float)(  minY + _rnd.NextDouble() * (targetY - minY)  );
                 }
             }
 
-            return lastPart.GetPos().y;
+            return (float)lastPart.GetPos().y;
         }
 
         public Part GetLastSolidPart(Segment segment)
