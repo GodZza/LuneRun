@@ -99,6 +99,40 @@ namespace shared.timer
             }
         }
 
+        public void StepInFlash()
+        {
+            // // elapsed: 从开始到现在的总时间
+            // double elapsed = _timer.GetTime() - _startTime;
+            // // accumulatedTime: 距离上次 tick 的累积时间
+            // double accumulatedTime = elapsed - _lastTick * _tickIntervalMs;
+            // // shouldStop: tick 是否返回 false（需要停止）
+            // bool shouldStop = false;
+            // // maxTick: 本次 step 最多能执行到哪个 tick
+            // int maxTick = _tick + _maxTicks;
+            // // 循环执行 tick，直到追上时间或达到上限
+            // while (accumulatedTime >= _tickIntervalMs && !shouldStop && _tick < maxTick)
+            // {
+            //     // 当前 tick 索引递增
+            //     _tick++;
+            //     // 记录已执行的 tick
+            //     _lastTick++;
+            //     // tick 前钩子
+            //     if (_tickHook != null)
+            //     {
+            //         _tickHook.PreTick(_tick);
+            //     }
+            //     // 执行游戏逻辑 tick，返回 false 表示需要停止
+            //     shouldStop = !_tickable.Tick(_tick);
+            //     // tick 后钩子
+            //     if (_tickHook != null)
+            //     {
+            //         _tickHook.PostTick(_tick);
+            //     }
+            //     // 减去本次 tick 消耗的时间
+            //     accumulatedTime -= _tickIntervalMs;
+            // }
+        }
+
         /// <summary>
         /// 重置 ticker
         /// </summary>

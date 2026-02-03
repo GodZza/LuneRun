@@ -32,7 +32,7 @@ namespace com.playchilla.runner.player
         private double _speed;
 
 
-        private World _world => _level.GetWorld(); // ÓÃÓÚÅĞ¶ÏÅö×²¼ÓËÙ´ø
+        private World _world => _level.GetWorld(); // ç”¨äºåˆ¤æ–­ç¢°æ’åŠ é€Ÿå¸¦
 
         private bool _breathOn;
 
@@ -112,7 +112,7 @@ namespace com.playchilla.runner.player
             if (closestCollider != null)
             {
                 float closestDistance = Vector3.Distance(_pos, closestCollider.transform.position);
-                Debug.Log("×î½üµÄÎïÌåÊÇ: " + closestCollider.gameObject.name + "£¬¾àÀëÎª: " + closestDistance);
+                Debug.Log("æœ€è¿‘çš„ç‰©ä½“æ˜¯: " + closestCollider.gameObject.name + "ï¼Œè·ç¦»ä¸º: " + closestDistance);
 
                 if ((object)closestCollider is SpeedEntity se) // TODO:
                 {
@@ -121,7 +121,7 @@ namespace com.playchilla.runner.player
                 }
             }
             return;
-            //  ¾É´úÂë
+            //  æ—§ä»£ç 
             if (_world == null) return; // Safety check
 
             RunnerEntity closest = _world.GetClosestEntity(_pos, 1);
@@ -260,18 +260,19 @@ namespace com.playchilla.runner.player
         internal void _onLand()
         {
             var loc1 = _vel.clone();
-            if (loc1.lengthSqr() < Vec3Const.EpsilonSqr)
+            if (loc1.lengthSqr() < Vec3Const.EpsilonSqr) //é€Ÿåº¦å¤ªå°äº†
             {
                 return;
             }
             loc1.normalizeSelf();
 
-            var loc2 = System.Math.Abs(loc1.dot(_currentPart.normal));
-            _listener?.onLand(loc2);
-            if (loc2 > 0.26)
+            // é€Ÿåº¦ä¸åœ°é¢æ³•çº¿å¤¹è§’
+            var impact = (float)System.Math.Abs(loc1.dot(_currentPart.normal));
+            _listener?.onLand(impact);
+            if (impact > 0.26)
             {
-                //ÔÙÀ´Ò»´Î£¿£¿ Õğ¶¯£¿£¿
-                _listener?.onLand(loc2);
+                //å†æ¥ä¸€æ¬¡ï¼Ÿï¼Ÿ éœ‡åŠ¨ï¼Ÿï¼Ÿ
+                _listener?.onLand(impact);
             }
         }
         

@@ -1,6 +1,7 @@
 using UnityEngine;
 using shared.math;
 using com.playchilla.runner;
+using com.playchilla.runner.track.segment;
 
 namespace com.playchilla.runner.player
 {
@@ -8,62 +9,80 @@ namespace com.playchilla.runner.player
     {
         private Camera _camera;
         private Player _player;
-        private Vec3 _lookOffset = new Vec3();
-        private Vec3 _wantedLookPos = new Vec3();
-        private double _lastTime;
-        private double _lerp = 1;
+        private Vector3 _lookOffset;
+        private Vector3 _wantedLookPos;
+        private float _lerp = 1;
 
-        public void Initialize(Camera camera, Player player)
+        public PlayerCam Initialize(Camera camera, Player player)
         {
             _camera = camera;
             _player = player;
             camera.nearClipPlane = 0.1f;
+            camera.transform.SetParent(this.transform);
+            camera.transform.localPosition = Vector3.zero;
+            camera.transform.localScale = Vector3.one;
+            camera.transform.localRotation = Quaternion.identity;
             // Additional initialization as needed
+            return this;
         }
 
-        public void RenderTick(int deltaTime)
+        public void RenderTick(int tick)
         {
-            UpdateWantedLookPos(deltaTime);
-            _lookOffset.scaleSelf(0.9);
-            // Debug assertions omitted
+            UpdateWantedLookPos(tick);
+            _lookOffset = _lookOffset * 0.9f;
         }
 
-        public void Render(int time, double alpha)
+        public void Update(float deltaTime) // 通过PlayerView调用，而不是自更新。（只有设置为第一人称视角才会调用）
         {
-            double currentTime = time + alpha;
-            double deltaTime = currentTime - _lastTime;
-            
-            Vec3 lookDir = new Vec3(0, 0, 1);
-            lookDir.addSelf(_lookOffset);
-            lookDir.normalizeSelf();
-            
-            Vec3 forwardVec = new Vec3(0, 0, 1);
-            forwardVec = new Vec3(forwardVec.x * (1 - _lerp) + lookDir.x * _lerp, forwardVec.y * (1 - _lerp) + lookDir.y * _lerp, forwardVec.z * (1 - _lerp) + lookDir.z * _lerp);
-            
-            // In Unity, we would set camera rotation to look at position + forwardVec
-            // Simplified implementation
-            _lastTime = currentTime;
-        }
+            var lookDir    = (Vector3.forward + _lookOffset).normalized;
+            var forwardVec = Vector3.Lerp(Vector3.forward, lookDir, _lerp);
+            var lookAt     = transform.position + forwardVec;
 
-        public void OnLand(double impact)
+            transform.LookAt(lookAt);
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="impact">撞击力</param>
+        public void OnLand(float impact)
         {
-            _lookOffset.x = impact * (UnityEngine.Random.value * 0.2 - 0.1);
-            _lookOffset.y = impact * -0.8;
+            _lookOffset.x = impact * (UnityEngine.Random.value * 0.2f - 0.1f);
+            _lookOffset.y = impact * -0.8f;
             _lerp = 1;
         }
 
-        public void SetLookOffset(Vec3Const offset, double lerp)
+        public void SetLookOffset(Vec3 offset, double lerp)
         {
-            _lerp = lerp;
-            _lookOffset.copy(offset);
+            _lerp = (float)lerp;
+            _lookOffset = offset;
         }
 
-        private void UpdateWantedLookPos(int deltaTime)
+        private void UpdateWantedLookPos(int tick)
         {
-            // Simplified: look at player position
-            Vec3 playerPos = _player.GetPos();
-            _wantedLookPos.copy(playerPos);
-            _wantedLookPos.addXYZSelf(0, 0, 1);
+            var part = _player.GetCurrentPart();
+            if(part == null){
+                _wantedLookPos = _player.GetPos() + Vector3.forward;
+                return;
+            }
+
+            var segment = part.segment.GetNextSegment();
+            if (segment == null)
+            {
+                _wantedLookPos = segment.GetLastPart().GetPos();
+                return;
+            }
+
+            while (segment is HoleSegment)
+            {
+                segment = segment.GetNextSegment();
+            }
+            if(segment == null)
+            {
+                return;
+            }
+
+            var lookPos = _player.IsOnGround() ? segment.GetFirstPart().GetPos() : segment.GetLastPart().GetPos();
+            _wantedLookPos = lookPos;
         }
     }
 }

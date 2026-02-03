@@ -3,6 +3,7 @@ using shared.input;
 using shared.math;
 using shared.render;
 using com.playchilla.runner;
+using System;
 
 namespace com.playchilla.runner.player
 {
@@ -15,8 +16,13 @@ namespace com.playchilla.runner.player
         private SmoothPos3 _smoothPos;
         private SmoothDir3 _smoothDir;
         private KeyboardInput _keyboard;
-        
+
         // Body parts GameObjects - 手部立方体
+        private GameObject _leftArm;
+        private GameObject _rightArm;
+        private GameObject _leftLeg;
+        private GameObject _rightLeg;
+
         private GameObject _upperArmLeft;
         private GameObject _upperArmRight;
         private GameObject _lowerArmLeft;
@@ -32,36 +38,47 @@ namespace com.playchilla.runner.player
         private double _pitch;
         private bool _firstPerson;
 
+        private double _disposX=0;
+        private double _disposY=0;
+        private double _lastDisposX;
+        private double _period=0;
+
         public PlayerView Initialize(Level level, Player player, Camera camera, Materials materials, KeyboardInput keyboard)
         {
             _level = level;
             _player = player;
             _camera = camera;
-            _playerCamera = gameObject.AddComponent<PlayerCam>();
-            _playerCamera.Initialize(camera, player);
+            _playerCamera = Utils.New<PlayerCam>().Initialize(camera, player);
             _smoothPos = new SmoothPos3(player.GetPos());
             _smoothDir = new SmoothDir3();
             _keyboard = keyboard;
             
             // 创建手部立方体（根据原Flash游戏尺寸）
             CreateHandCubes();
+            CreateLegCubes();
             
             // Set player listener
             player.SetListener(this);
             
             // Position at player start
-            Vec3 playerPos = player.GetPos();
-            transform.position = new Vector3((float)playerPos.x, (float)playerPos.y, (float)playerPos.z);
+            var playerPos = player.GetPos();
+            transform.position = playerPos;
+            _playerCamera.transform.SetParent(transform, false);
+            _playerCamera.transform.localPosition = new Vector3(0, (float)_headOffset.y, 0);
             return this;
         }
 
         private void CreateHandCubes()
         {
             Debug.Log("[PlayerView] Creating hand cubes for complete arm system");
-            
+
+            _leftArm = new GameObject(nameof(_leftArm));
+            _rightArm = new GameObject(nameof(_rightArm));
+
+            //_upperArmLeft = GameObject.CreatePrimitive(PrimitiveType.Cube);
+
             // 上臂立方体 (尺寸: 0.1, 0.1, 0.5) - 原代码使用 CubeGeometry(0.1, 0.1, 0.5)
-            // 临时放大2倍以便调试
-            float debugScale = 2.0f;
+            float debugScale = 1.0f;
             
             _upperArmLeft = GameObject.CreatePrimitive(PrimitiveType.Cube);
             _upperArmRight = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -119,7 +136,13 @@ namespace com.playchilla.runner.player
             
             Debug.Log($"[PlayerView] Hand cubes created: upper arms={_upperArmLeft != null}/{_upperArmRight != null}, lower arms={_lowerArmLeft != null}/{_lowerArmRight != null}, fingers={_leftFingers != null}/{_rightFingers != null}");
         }
-        
+
+        private void CreateLegCubes()
+        {
+            Debug.Log("TODO");
+        }
+
+
         private void SetCubeColor(GameObject cube, Color color)
         {
             Renderer renderer = cube.GetComponent<Renderer>();
@@ -132,21 +155,18 @@ namespace com.playchilla.runner.player
 
         private void OnFootDown()
         {
-            // Play footstep sound - placeholder
+            // TODO: Play footstep sound - placeholder
             // Audio.Sound.getSound(Audio.GetRandom(...)).Play(_player.GetSpeedAlpha());
+            //com.playchilla.runner.Audio.Sound.getSound(com.playchilla.runner.Audio.getRandom([SFootstep1, SFootstep2, SFootstep3, SFootstep4, SFootstep5])).play(this._player.getSpeedAlpha());
         }
 
-        void IPlayerListener.onLand(double impact)
+        void IPlayerListener.onLand(float impact)
         {
             _playerCamera.OnLand(impact);
         }
         
-        public void OnLand(double impact)
-        {
-            _playerCamera.OnLand(impact);
-        }
 
-        public void Render(int time, double alpha)
+        public void Render(int tick, double alpha)
         {
             if (_player == null)
             {
@@ -154,26 +174,53 @@ namespace com.playchilla.runner.player
                 return;
             }
             
-            double currentTime = time + alpha;
-            Vec3 smoothPosition = _smoothPos.GetPos(_player.GetPos(), time, alpha);
-            transform.position = new Vector3((float)smoothPosition.x, (float)smoothPosition.y, (float)smoothPosition.z);
+            var currentTime = tick + alpha;
+            var smoothPosition = _smoothPos.GetPos(_player.GetPos(), tick, alpha);
+            transform.position = smoothPosition;
             
             // 更新手部动画
-            UpdateHandAnimation(time, alpha);
-            
-            // Update camera
+            UpdateHandAnimation(tick, alpha);
+
+            var part = _player.GetCurrentPart();
+            if (part != null)
+            {
+                var delta = tick + alpha - _lastTime;
+
+                var x = default(Vector3);
+                if (_player.IsOnGround())
+                {
+                    x = part.dir;
+                }
+                else
+                {
+                    var nextForward = _player.GetPos() + new Vector3((float)(100 * part.dir.x), 0, (float)(100 * part.dir.z));
+                    nextForward.y -= 30;
+                    x = (nextForward - _player.GetPos()).normalized;
+                }
+                var forwardVector = Vector3.Lerp(this.transform.forward, x, (float)(0.15 * delta));
+                var upVector = Vector3.Lerp(transform.up, part.normal, (float)(0.2 * delta));
+
+                this.transform.LookAt(this.transform.position + this.transform.forward, upVector);
+            }
+
+            if (_player.IsOnGround())
+            {
+                ApplyHeadShake(tick, alpha);
+                AnimateOnGround(tick, alpha);
+            }
+            else
+            {
+                AnimateInAir(tick, alpha);
+            }
+
             if (_firstPerson)
             {
-                _playerCamera.Render(time, alpha);
+                //_playerCamera.Render(tick, alpha); // OLD
+                
             }
+            UpdateCamera();
             
             _lastTime = currentTime;
-            
-            // Debug log every 60 calls
-            if (time % 6000 == 0) // approximately every 6 seconds
-            {
-                Debug.Log($"[PlayerView] Render: time={time}, pos={transform.position}, smoothPos={smoothPosition}");
-            }
         }
 
         public void RenderTick(int deltaTime)
@@ -182,9 +229,133 @@ namespace com.playchilla.runner.player
             {
                 _playerCamera.RenderTick(deltaTime);
             }
+
+            var part = _player.GetCurrentPart();
+            if(part != null)
+            {
+                _lastRoll = _roll;
+                _roll = _roll + 0.1 * (part.zRot - _roll);
+            }
         }
 
-        private void UpdateHandAnimation(int time, double alpha)
+        private void UpdateCamera() // 这里默认就是第一人称的，暂时不管 TODO:
+        {
+            if (_firstPerson)
+            {
+                return;
+            }
+            // 原Flash代码
+            //var loc1:*= shared.math.Conv.deg2rad(5);
+            //var loc2:*= shared.math.Conv.deg2rad(5);
+            //if (this._keyboard.isDown(flash.ui.Keyboard.LEFT))
+            //{
+            //    this._yaw = this._yaw - loc1;
+            //}
+            //if (this._keyboard.isDown(flash.ui.Keyboard.RIGHT))
+            //{
+            //    this._yaw = this._yaw + loc1;
+            //}
+            //if (this._keyboard.isDown(flash.ui.Keyboard.UP))
+            //{
+            //    this._pitch = this._pitch + loc2;
+            //}
+            //if (this._keyboard.isDown(flash.ui.Keyboard.DOWN))
+            //{
+            //    this._pitch = this._pitch - loc2;
+            //}
+            //if (this._keyboard.isDown(flash.ui.Keyboard.W))
+            //{
+            //    this._camera.moveForward(20);
+            //}
+            //if (this._keyboard.isDown(flash.ui.Keyboard.S))
+            //{
+            //    this._camera.moveBackward(20);
+            //}
+            //if (this._keyboard.isDown(flash.ui.Keyboard.A))
+            //{
+            //    this._camera.moveLeft(20);
+            //}
+            //if (this._keyboard.isDown(flash.ui.Keyboard.D))
+            //{
+            //    this._camera.moveRight(20);
+            //}
+            //if (this._keyboard.isDown(flash.ui.Keyboard.SHIFT))
+            //{
+            //    this._camera.moveUp(4);
+            //}
+            //if (this._keyboard.isDown(flash.ui.Keyboard.CONTROL))
+            //{
+            //    this._camera.moveDown(4);
+            //}
+            //var loc3:*= new flash.geom.Vector3D();
+            //loc3.x = 10 * Math.sin(this._yaw) * Math.cos(this._pitch) + this._camera.x;
+            //loc3.z = 10 * Math.cos(this._yaw) * Math.cos(this._pitch) + this._camera.z;
+            //loc3.y = 10 * Math.sin(this._pitch) + this._camera.y;
+            //this._camera.lookAt(loc3);
+
+
+
+            // Camera control via keyboard - simplified for Unity
+            float pitchDelta = Mathf.Deg2Rad * (5);
+            float yawDelta = Mathf.Deg2Rad * (5);
+
+            if (_keyboard.IsDown(KeyCode.LeftArrow))
+            {
+
+            }
+
+            if (Input.GetKey(KeyCode.LeftArrow))
+                yawDelta -= 5f;
+            if (Input.GetKey(KeyCode.RightArrow))
+                yawDelta += 5f;
+            if (Input.GetKey(KeyCode.UpArrow))
+                pitchDelta += 5f;
+            if (Input.GetKey(KeyCode.DownArrow))
+                pitchDelta -= 5f;
+
+            _yaw += yawDelta * Mathf.Deg2Rad;
+            _pitch += pitchDelta * Mathf.Deg2Rad;
+
+            // WASD movement
+            float moveSpeed = 20f;
+            if (Input.GetKey(KeyCode.W))
+                _camera.transform.Translate(Vector3.forward * moveSpeed * Time.deltaTime);
+            if (Input.GetKey(KeyCode.S))
+                _camera.transform.Translate(Vector3.back * moveSpeed * Time.deltaTime);
+            if (Input.GetKey(KeyCode.A))
+                _camera.transform.Translate(Vector3.left * moveSpeed * Time.deltaTime);
+            if (Input.GetKey(KeyCode.D))
+                _camera.transform.Translate(Vector3.right * moveSpeed * Time.deltaTime);
+            if (Input.GetKey(KeyCode.LeftShift))
+                _camera.transform.Translate(Vector3.up * 4f * Time.deltaTime);
+            if (Input.GetKey(KeyCode.LeftControl))
+                _camera.transform.Translate(Vector3.down * 4f * Time.deltaTime);
+
+            // Look at target
+            Vector3 lookTarget = _camera.transform.position + _camera.transform.forward * 10f;
+            _camera.transform.LookAt(lookTarget);
+        }
+
+        private void AnimateInAir(int tick, double alpha)
+        {
+            // 原Flash代码：loc1 = 10 * (arg1 + arg2);
+            // this._upperArmLeft.rotateTo(loc1, 0, 0);
+            // this._upperArmRight.rotateTo(loc1 + 180, 0, 0);
+            // this._lowerArmLeft.rotateTo(70, 0, 0);
+            // this._lowerArmRight.rotateTo(70, 0, 0);
+
+            float loc1 = 10f * (tick + (float)alpha);
+
+            if (_upperArmLeft != null)
+                _upperArmLeft.transform.localRotation = Quaternion.Euler(loc1, 0, 0);
+            if (_upperArmRight != null)
+                _upperArmRight.transform.localRotation = Quaternion.Euler(loc1 + 180f, 0, 0);
+            if (_lowerArmLeft != null)
+                _lowerArmLeft.transform.localRotation = Quaternion.Euler(70f, 0, 0);
+            if (_lowerArmRight != null)
+                _lowerArmRight.transform.localRotation = Quaternion.Euler(70f, 0, 0);
+        }
+        private void UpdateHandAnimation(int time, double alpha) //?
         {
             if (_player == null) return;
             
@@ -202,25 +373,6 @@ namespace com.playchilla.runner.player
             }
         }
 
-        private void AnimateInAir(int time, double alpha)
-        {
-            // 原Flash代码：loc1 = 10 * (arg1 + arg2);
-            // this._upperArmLeft.rotateTo(loc1, 0, 0);
-            // this._upperArmRight.rotateTo(loc1 + 180, 0, 0);
-            // this._lowerArmLeft.rotateTo(70, 0, 0);
-            // this._lowerArmRight.rotateTo(70, 0, 0);
-            
-            float loc1 = 10f * (time + (float)alpha);
-            
-            if (_upperArmLeft != null)
-                _upperArmLeft.transform.localRotation = Quaternion.Euler(loc1, 0, 0);
-            if (_upperArmRight != null)
-                _upperArmRight.transform.localRotation = Quaternion.Euler(loc1 + 180f, 0, 0);
-            if (_lowerArmLeft != null)
-                _lowerArmLeft.transform.localRotation = Quaternion.Euler(70f, 0, 0);
-            if (_lowerArmRight != null)
-                _lowerArmRight.transform.localRotation = Quaternion.Euler(70f, 0, 0);
-        }
 
         private void AnimateOnGround(int time, double alpha)
         {
@@ -274,85 +426,189 @@ namespace com.playchilla.runner.player
             }
         }
 
-        private void UpdateCamera()
+        private void ApplyHeadShake(int tick, double alpha)
         {
-            if (_firstPerson)
+            if (!_player.IsOnGround()) return;
+
+            var speedAlpha = Math.Min(0.9f, _player.GetSpeedAlpha());
+            var tt = tick + alpha;
+            var timeDelta = tt - _lastTime;
+
+            // 更新周期，速度越快周期增加越快
+            _period += (0.6f + speedAlpha) * timeDelta;
+
+            // 计算X轴和Y轴的位移
+            _disposX = Math.Sin(_period / 4f);
+            _disposY = Math.Sin(_period / 2f + Mathf.PI * 0.5f);
+
+            // 应用位移到当前位置
+            Vector3 pos = transform.position;
+            pos.x += (float)(0.4f * speedAlpha * _disposX);
+            pos.y += (float)(0.3f * speedAlpha * _disposY);
+            transform.position = pos;
+
+            // 如果X轴位移方向发生变化（穿过零点），触发脚步落地事件
+            if (_disposX * _lastDisposX < 0)
             {
-                return;
+                OnFootDown();
             }
-            
-            // Camera control via keyboard - simplified for Unity
-            float pitchDelta = 0;
-            float yawDelta = 0;
-            
-            if (Input.GetKey(KeyCode.LeftArrow))
-                yawDelta -= 5f;
-            if (Input.GetKey(KeyCode.RightArrow))
-                yawDelta += 5f;
-            if (Input.GetKey(KeyCode.UpArrow))
-                pitchDelta += 5f;
-            if (Input.GetKey(KeyCode.DownArrow))
-                pitchDelta -= 5f;
-            
-            _yaw += yawDelta * Mathf.Deg2Rad;
-            _pitch += pitchDelta * Mathf.Deg2Rad;
-            
-            // WASD movement
-            float moveSpeed = 20f;
-            if (Input.GetKey(KeyCode.W))
-                _camera.transform.Translate(Vector3.forward * moveSpeed * Time.deltaTime);
-            if (Input.GetKey(KeyCode.S))
-                _camera.transform.Translate(Vector3.back * moveSpeed * Time.deltaTime);
-            if (Input.GetKey(KeyCode.A))
-                _camera.transform.Translate(Vector3.left * moveSpeed * Time.deltaTime);
-            if (Input.GetKey(KeyCode.D))
-                _camera.transform.Translate(Vector3.right * moveSpeed * Time.deltaTime);
-            if (Input.GetKey(KeyCode.LeftShift))
-                _camera.transform.Translate(Vector3.up * 4f * Time.deltaTime);
-            if (Input.GetKey(KeyCode.LeftControl))
-                _camera.transform.Translate(Vector3.down * 4f * Time.deltaTime);
-            
-            // Look at target
-            Vector3 lookTarget = _camera.transform.position + _camera.transform.forward * 10f;
-            _camera.transform.LookAt(lookTarget);
+
+            // 记录当前位移用于下一次比较
+            _lastDisposX = _disposX;
+
         }
 
-        private void ApplyHeadShake(int time, double alpha)
-        {
-            // Simplified head shake
-        }
+
+
+
 
         public PlayerCam getCam()
         {
             return _playerCamera;
         }
 
-        public PlayerCam GetCam()
-        {
-            return _playerCamera;
-        }
         
         // Unity Update 方法，用于实时更新动画（如果使用Render方法，可以省略）
         private void Update()
         {
-            // 如果使用Render方法，可以注释掉这里
-            // UpdateHandAnimation((int)(Time.time * 1000), Time.deltaTime);
-            
-            // Alternative: update animation based on Unity's Update loop
-            // This ensures arm cubes are animated even if Render isn't called
-            if (_player != null)
-            {
-                int currentTime = (int)(Time.time * 1000);
-                float alpha = Time.deltaTime;
-                UpdateHandAnimation(currentTime, alpha);
-                
-                // Debug log every 60 frames
-                if (Time.frameCount % 60 == 0)
-                {
-                    Debug.Log($"[PlayerView] Update: pos={transform.position}, upperArmLeft={_upperArmLeft != null}, lowerArmLeft={_lowerArmLeft != null}, playerSpeedAlpha={_player.GetSpeedAlpha()}");
-                }
-            }
+            Update(Time.deltaTime);
+
         }
 
+
+
+
+        void Update(float deltaTime)
+        {
+            if (_player == null)
+            {
+                Debug.LogWarning("[PlayerView] Render: _player is null!");
+                return;
+            }
+
+            //var smoothPosition = _smoothPos.GetPos(_player.GetPos(), time, alpha);
+            var smoothPosition = Vector3.Lerp(transform.position, _player.GetPos(), 0.5f); // 临时的
+            transform.position = smoothPosition;
+
+            // 更新手部动画
+            UpdateHandAnimation(deltaTime);
+
+            var part = _player.GetCurrentPart();
+            if (part != null)
+            {
+                var x = default(Vector3);
+                if (_player.IsOnGround())
+                {
+                    x = part.dir;
+                }
+                else
+                {
+                    var nextForward = _player.GetPos() + new Vector3((float)(100 * part.dir.x), 0, (float)(100 * part.dir.z));
+                    nextForward.y -= 30;
+                    x = (nextForward - _player.GetPos()).normalized;
+                }
+                var forwardVector = Vector3.Lerp(this.transform.forward, x, 0.15f * deltaTime);
+                var upVector = Vector3.Lerp(transform.up, part.normal, 0.2f * deltaTime);
+
+                this.transform.LookAt(this.transform.position + this.transform.forward, upVector);
+            }
+
+            if (_player.IsOnGround())
+            {
+                ApplyHeadShake(deltaTime);
+                AnimateOnGround(deltaTime);
+            }
+            else
+            {
+                AnimateInAir(deltaTime);
+            }
+
+            if (_firstPerson)
+            {
+                _playerCamera.Update(deltaTime);
+            }
+            UpdateCamera();
+        }
+
+
+
+        private void AnimateInAir(float detaTime)
+        {
+            // 原Flash代码：loc1 = 10 * (arg1 + arg2);
+            // this._upperArmLeft.rotateTo(loc1, 0, 0);
+            // this._upperArmRight.rotateTo(loc1 + 180, 0, 0);
+            // this._lowerArmLeft.rotateTo(70, 0, 0);
+            // this._lowerArmRight.rotateTo(70, 0, 0);
+
+        }
+
+        private void UpdateHandAnimation(float detaTime)
+        {
+            if (_player == null) return;
+
+            // 获取玩家状态
+            bool isOnGround = _player.IsOnGround();
+            float speedAlpha = (float)_player.GetSpeedAlpha();
+
+            if (isOnGround)
+            {
+                AnimateOnGround(detaTime);
+            }
+            else
+            {
+                AnimateInAir(detaTime);
+            }
+        }
+        private void ApplyHeadShake(float detaTime)
+        {
+            if (!_player.IsOnGround()) return;
+
+            var speedAlpha = Math.Min(0.9f, _player.GetSpeedAlpha());
+
+            // 更新周期，速度越快周期增加越快
+            _period += (0.6f + speedAlpha) * detaTime;
+
+            // 计算X轴和Y轴的位移
+            _disposX = Math.Sin(_period / 4f);
+            _disposY = Math.Sin(_period / 2f + Mathf.PI * 0.5f);
+
+            // 应用位移到当前位置
+            Vector3 pos = transform.position;
+            pos.x += (float)(0.4f * speedAlpha * _disposX);
+            pos.y += (float)(0.3f * speedAlpha * _disposY);
+            transform.position = pos;
+
+            // 如果X轴位移方向发生变化（穿过零点），触发脚步落地事件
+            if (_disposX * _lastDisposX < 0)
+            {
+                OnFootDown();
+            }
+
+            // 记录当前位移用于下一次比较
+            _lastDisposX = _disposX;
+
+        }
+
+
+        private void AnimateOnGround(float deltaTime)
+        {
+            // 原Flash代码：
+            // if (this._player.getSpeedAlpha() > 0.1) {
+            //     loc1 = -10 - 60 * (-this._disposX);
+            //     loc2 = 20 - 40 * (-this._disposX);
+            //     loc3 = -10 - 60 * this._disposX;
+            //     loc4 = 20 - 40 * this._disposX;
+            //     this._upperArmLeft.rotateTo(loc1, 0, 0);
+            //     this._lowerArmLeft.rotateTo(loc2, 0, 0);
+            //     this._upperArmRight.rotateTo(loc3, 0, 0);
+            //     this._lowerArmRight.rotateTo(loc4, 0, 0);
+            // } else {
+            //     this._upperArmLeft.rotateTo(0, 0, 0);
+            //     this._lowerArmLeft.rotateTo(0, 0, 0);
+            //     this._upperArmRight.rotateTo(0, 0, 0);
+            //     this._lowerArmRight.rotateTo(0, 0, 0);
+            // }
+
+        }
     }
 }
