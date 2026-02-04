@@ -32,7 +32,7 @@ namespace com.playchilla.runner.player
             _lookOffset = _lookOffset * 0.9f;
         }
 
-        public void Update(float deltaTime) // 通过PlayerView调用，而不是自更新。（只有设置为第一人称视角才会调用）
+        public void Tick(float deltaTime) // 通过PlayerView调用，而不是自更新。（只有设置为第一人称视角才会调用）
         {
             var lookDir    = (Vector3.forward + _lookOffset).normalized;
             var forwardVec = Vector3.Lerp(Vector3.forward, lookDir, _lerp);

@@ -22,10 +22,10 @@ namespace LuneRun.Tests
         /// </summary>
         private void Setup()
         {
-            _track = new Track();
-            _track.SetConnectPart(new Part(null, new Vec3(0, 150, 0), new Vec3(0, 0, 1), new Vec3(0, 1, 0), null, 0, 0));
-            _random = new global::shared.math.Random(1);
-            _materials = new Materials();
+            //_track = new Track();
+            //_track.SetConnectPart(new Part(null, new Vec3(0, 150, 0), new Vec3(0, 0, 1), new Vec3(0, 1, 0), null, 0, 0));
+            //_random = new global::shared.math.Random(1);
+            //_materials = new Materials();
         }
 
         #region ForwardGenerator Tests
@@ -209,7 +209,7 @@ namespace LuneRun.Tests
         {
             // Arrange
             Setup();
-            _track.SetConnectPart(new Part(null, new Vec3(0, 50, 0), new Vec3(0, 0, 1), new Vec3(0, 1, 0), null, 0, 0));
+            //_track.SetConnectPart(new Part(null, new Vec3(0, 50, 0), new Vec3(0, 0, 1), new Vec3(0, 1, 0), null, 0, 0));
             var generator = new SlopeGenerator(_track, _random, _materials, false); // up = false
 
             // Act

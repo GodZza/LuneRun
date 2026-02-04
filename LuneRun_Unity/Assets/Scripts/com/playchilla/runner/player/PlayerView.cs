@@ -525,7 +525,7 @@ namespace com.playchilla.runner.player
 
             if (_firstPerson)
             {
-                _playerCamera.Update(deltaTime);
+                _playerCamera.Tick(deltaTime);
             }
             UpdateCamera();
         }
