@@ -7,13 +7,13 @@ namespace com.playchilla.runner.track
 {
     public class Part
     {
-        private readonly Vec3 _pos;
-        public readonly Vec3 dir;
-        public readonly Vec3 right;
-        public readonly Vec3 normal;
         public const int Length = 6;
+        public readonly Vector3 dir;
+        public readonly Vector3 right;
+        public readonly Vector3 normal;
+        
 
-        public double zRot;
+        public readonly float zRot;
 
         public Part next;
         public Part previous;
@@ -22,17 +22,17 @@ namespace com.playchilla.runner.track
         public Segment segment;
         public int partIndex;
 
-        public Part(Segment segment, Vec3 pos, Vec3 dir, Vec3 normal, GameObject mesh, int index, double zRot)
+        private readonly Vector3 _pos;
+
+        public Part(Segment segment, Vector3 pos, Vector3 dir, Vector3 normal, GameObject mesh, int index, float zRot)
         {
             this.segment = segment;
             this._pos = pos;
-            this.dir = dir;
-            this.dir.normalizeSelf();
+            this.dir = dir.normalized;
 
-            this.normal = normal;
-            this.normal.normalizeSelf();
+            this.normal = normal.normalized;
 
-            this.right = dir.cross(normal);
+            this.right = Vector3.Cross(dir, normal);
             this.zRot = zRot;
             this.partIndex = index;
             this.mesh = mesh;
@@ -42,32 +42,35 @@ namespace com.playchilla.runner.track
             }
         }
 
-        public Vec3 GetPos()
+        public Vector3 GetPos()
         {
             return _pos;
         }
-
-
-        public bool hasPassedForward(Vec3Const arg1)
+        /// <summary>
+        /// 检查目标点是否已通过本部件的前向检查点（沿方向向前的点）
+        /// </summary>
+        /// <param name="positionToCheck">要检查的世界坐标系中的位置</param>
+        /// <returns>如果目标点已通过前向检查点则返回true，否则返回false</returns>
+        public bool hasPassedForward(Vector3 positionToCheck)
         {
-            var loc1 =this._pos.add(this.dir.scale(Length* 0.5));
-            return arg1.sub(loc1).dot(this.dir) > 0;
+            // 计算前向检查点：从部件中心沿方向向量移动半个部件长度
+            var forwardCheckPoint = _pos + dir * Part.Length * 0.5f;
+
+            // 通过点积判断目标点是否已通过检查点
+            // 点积大于0表示目标点在方向向量的前方
+            return Vector3.Dot(positionToCheck - forwardCheckPoint, dir) > 0;
+        }
+        /// <summary>
+        /// 检查目标点是否已通过本部件的后向检查点（沿方向向后的点）
+        /// </summary>
+        /// <param name="positionToCheck">要检查的世界坐标系中的位置</param>
+        /// <returns>如果目标点已通过后向检查点则返回true，否则返回false</returns>
+        public bool hasPassedBackward(Vector3 positionToCheck)
+        {
+            var backwardCheckPoint = _pos - dir * Part.Length * 0.5f;
+            return Vector3.Dot(positionToCheck - backwardCheckPoint, dir) < 0;
         }
 
-        public bool hasPassedBackward(Vec3Const arg1)
-        {
-            var loc1 = this._pos.sub(this.dir.scale(Length * 0.5));
-            return arg1.sub(loc1).dot(this.dir) < 0;
-        }
-        public Vec3 GetSurface(Vec3 rayOrigin, Vec3 rayDirection)
-        {
-            if (mesh == null) return null;
-
-            var v3 = GetSurface((Vector3)rayOrigin, (Vector3)rayDirection);
-            if (v3 == null) return null;
-            var v = v3.Value;
-            return new Vec3(v.x, v.y, v.z);
-        }
 
         /// <summary>
         /// 获取射线与网格表面的交点
@@ -101,8 +104,7 @@ namespace com.playchilla.runner.track
 
             // 将四边形分成两个三角形进行检测
             // 三角形1：顶点0,1,2
-            var intersection = RayTriangleIntersection(rayOrigin, rayDirection,
-                worldVertices[0], worldVertices[1], worldVertices[2]);
+            var intersection = RayTriangleIntersection(rayOrigin, rayDirection, worldVertices[0], worldVertices[1], worldVertices[2]);
 
             if (intersection != null)
             {
@@ -110,8 +112,7 @@ namespace com.playchilla.runner.track
             }
 
             // 三角形2：顶点0,2,3
-            intersection = RayTriangleIntersection(rayOrigin, rayDirection,
-                worldVertices[0], worldVertices[2], worldVertices[3]);
+            intersection = RayTriangleIntersection(rayOrigin, rayDirection, worldVertices[0], worldVertices[2], worldVertices[3]);
 
             return intersection;
         }

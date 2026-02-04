@@ -19,7 +19,7 @@ namespace com.playchilla.runner.track.segment
             var material = (Material)materials?.GetMaterial("part");
 
             var part = this.GetConnectPart();
-            var currentPosition = part.GetPos().clone();
+            var currentPosition = part.GetPos();
             currentPosition.y = y;
 
             var rotationYIncrement = totalRotationY / totalParts;

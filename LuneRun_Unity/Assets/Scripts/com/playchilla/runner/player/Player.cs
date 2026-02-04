@@ -11,12 +11,12 @@ namespace com.playchilla.runner.player
 {
     public class Player : MonoBehaviour
     {
-        private Vec3 _pos;
-        private Vec3 _startPos;
-        private Vec3 _vel;
+        private Vector3 _pos;
+        private Vector3 _startPos;
+        private Vector3 _vel;
 
-        private const double _MaxSpeed = 3.8;
-        private const double _g = 0.14; // per tick
+        private const float _MaxSpeed = 3.8f;
+        private const float _g = 0.14f; // per tick
 
         private Track _track;
         private KeyboardInput _keyboard;
@@ -29,7 +29,7 @@ namespace com.playchilla.runner.player
         private bool _hasCompleted;
         private bool _dead;
         private Level _level;
-        private double _speed;
+        private float _speed;
 
 
         private World _world => _level.GetWorld(); // 用于判断碰撞加速带
@@ -60,7 +60,7 @@ namespace com.playchilla.runner.player
         public Vec3 GetPos() => _pos; //?s
         
         public bool IsOnGround() => _onGround;
-        public double GetSpeedAlpha() => _vel.length() / _MaxSpeed;
+        public double GetSpeedAlpha() => _vel.magnitude / _MaxSpeed;
         public double GetSpeedY() => _vel.y;
         public Part GetCurrentPart() => _currentPart;
         public void SetListener(IPlayerListener listener) => _listener = listener;
@@ -116,19 +116,9 @@ namespace com.playchilla.runner.player
 
                 if ((object)closestCollider is SpeedEntity se) // TODO:
                 {
-                    _vel.scaleSelf(1.2);
+                    _vel *= 1.2f;
                     se.Remove();
                 }
-            }
-            return;
-            //  旧代码
-            if (_world == null) return; // Safety check
-
-            RunnerEntity closest = _world.GetClosestEntity(_pos, 1);
-            if (closest is SpeedEntity)
-            {
-                _vel.scaleSelf(1.2);
-                closest.Remove();
             }
         }
 
@@ -152,7 +142,7 @@ namespace com.playchilla.runner.player
             {
                 // Default behavior if no current part
                 _speed = 0;
-                _vel.copy(new Vec3(0, 0, 1)); // Default forward direction
+                _vel = Vector3.forward; // Default forward direction
                 if (up)
                 {
                     _vel.y = _vel.y + 4;
@@ -161,25 +151,25 @@ namespace com.playchilla.runner.player
                 return;
             }
 
-            _speed = _vel.dot(_currentPart.dir);
-            _vel.copy(_currentPart.dir.scale(_speed));
+            _speed = Vector3.Dot(_vel, _currentPart.dir);
+            _vel = _currentPart.dir * _speed;
             if (down)
             {
                 _fallTime = 0;
                 if (_speed < _MaxSpeed)
                 {
-                    _vel.addSelf(_currentPart.dir.scale(0.1));
+                    _vel += _currentPart.dir * 0.1f;
                 }
-                var scale = -0.1 * _currentPart.dir.y;
+                var scale = -0.1f * _currentPart.dir.y;
                 if (_speed < _MaxSpeed * 1.4)
                 {
                     if (scale > 0)
                     {
-                        _vel.addSelf(_currentPart.dir.scale(scale));
+                        _vel += _currentPart.dir * scale;
                     }
                     else
                     {
-                        _vel.addSelf(_currentPart.dir.scale(scale));
+                        _vel += _currentPart.dir * scale;
                     }
                 }
             }
@@ -204,15 +194,15 @@ namespace com.playchilla.runner.player
         internal void _clip()
         {
             // Flash physics system: use track.getClosestPart() for collision detection
-            var newPos = _pos.add(_vel);
+            var newPos = _pos + _vel;
             var part = _track.GetClosestPart(newPos);
 
-            var surfacePos = default(Vec3);
+            var surfacePos = default(Vector3?);
 
             if (part != null)
             {
-                var loc3 = newPos.add(part.normal.scale(14));
-                var loc4 = newPos.sub(part.normal.scale(2));
+                var loc3 = newPos + part.normal * 14;
+                var loc4 = newPos - part.normal * 2;
                 surfacePos = part.GetSurface(loc3, loc4);
                 var willOnGround = surfacePos != null;
                 if (willOnGround)
@@ -229,23 +219,23 @@ namespace com.playchilla.runner.player
             if (_onGround)
             {
                 // Stick to surface
-                _pos.copy(surfacePos);
+                _pos = surfacePos.Value;
                 _pos.y += 0.1f; // Slight offset above surface
 
                 // Edge constraint: keep player within track bounds
                 var loc7 = _currentPart.GetPos();
-                var loc8 = _pos.sub(loc7);
-                var loc9 = loc8.dot(_currentPart.right);
+                var loc8 = _pos - (loc7);
+                var loc9 = Vector3.Dot(loc8,_currentPart.right);
                 if (System.Math.Abs(loc9) > 2)
                 {
-                    Vec3 offsetConstraint = _currentPart.right.rescale(loc9 > 0 ? -0.4 : 0.4);
-                    _pos.addSelf(offsetConstraint);
+                    var offsetConstraint = _currentPart.right.normalized * (loc9 > 0 ? -0.4f : 0.4f);
+                    _pos += (offsetConstraint);
                 }
             }
             else
             {
                 // Free fall in air
-                _pos.addSelf(_vel);
+                _pos += (_vel);
             }
         }
         
@@ -259,15 +249,15 @@ namespace com.playchilla.runner.player
         
         internal void _onLand()
         {
-            var loc1 = _vel.clone();
-            if (loc1.lengthSqr() < Vec3Const.EpsilonSqr) //速度太小了
+            var loc1 = _vel;
+            if (loc1.sqrMagnitude < Vec3Const.EpsilonSqr) //速度太小了
             {
                 return;
             }
-            loc1.normalizeSelf();
+            loc1.Normalize();
 
             // 速度与地面法线夹角
-            var impact = (float)System.Math.Abs(loc1.dot(_currentPart.normal));
+            var impact = (float)System.Math.Abs( Vector3.Dot(loc1, _currentPart.normal));
             _listener?.onLand(impact);
             if (impact > 0.26)
             {
@@ -282,14 +272,14 @@ namespace com.playchilla.runner.player
         }
         
         // Helper methods for external access
-        public void SetPosition(Vec3 pos) { _pos.copy(pos); }
-        public void SetVelocity(Vec3 vel) { _vel.copy(vel); }
+        public void SetPosition(Vec3 pos) { _pos = (pos); }
+        public void SetVelocity(Vec3 vel) { _vel = (vel); }
 
         // Set ground state externally (from PlayerController)
         public void SetOnGround(bool onGround) { _onGround = onGround; }
 
         // Set velocity magnitude for arm animation speed calculation
-        public void SetSpeed(double speed) { _speed = speed; }
+        public void SetSpeed(double speed) { _speed = (float)speed; }
 
         public void SetCurrentPart(Part part) { _currentPart = part; }
 
