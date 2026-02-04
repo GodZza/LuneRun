@@ -87,11 +87,17 @@ namespace com.playchilla.runner.track
             Debug.Log($"[DynamicTrack] Initialized x segment generators");
         }
 
-        public void TryRemove(Part part)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="playerStandPart">玩家站在的Part</param>
+        public void TryRemove(Part playerStandPart)
         {
-            if(part == null) return;
+            if(playerStandPart == null) return;
 
-            var segment = part.segment.GetPreviousSegment();
+            // 删除part之前的 segment
+
+            var segment = playerStandPart.segment.GetPreviousSegment();
             if(segment == null) return;
             var keep = _keepBackward;
             while(segment != null && --keep > 0)
@@ -174,10 +180,10 @@ namespace com.playchilla.runner.track
             _segmentCount += 1;
         }
 
-        public bool Update(com.playchilla.runner.track.Part part, int levelId, int maxSegment)
+        public bool Update(Part part, int levelId, int maxSegment)
         {
-            this.TryRemove(part);
-            this.TryAdd(levelId, maxSegment);
+            this.TryRemove(part);             // 移除玩家后方旧的段
+            this.TryAdd(levelId, maxSegment); // 添加玩家前方新的段
             return this._segmentCount>= maxSegment;
         }
 

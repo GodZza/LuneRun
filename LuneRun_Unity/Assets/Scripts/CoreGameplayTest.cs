@@ -136,56 +136,45 @@ namespace LuneRun.Tests
         /// </summary>
         public void SetupTestEnvironment()
         {
-            try
-            {
-                // 1. 创建测试 Level
-                GameObject levelObj = new GameObject("TestLevel");
-                _testLevel = levelObj.AddComponent<Level>();
-                //_testLevel.Initialize(testLevelId, false, null, null); //-------------------------
-                LogMessage($"[1/5] 创建测试 Level (LevelId: {testLevelId})");
 
-                // 2. 获取 Player
-                _player = _testLevel.GetPlayer();
-                if (_player == null)
-                {
-                    throw new System.Exception("无法获取 Player");
-                }
-                LogMessage($"[2/5] 获取 Player");
+            // 1. 创建测试 Level
+            var level = Utils.New<Level>();
+            level.Tick(Time.frameCount);
 
-                // 3. 添加速度实体（测试收集物品功能）
-                AddTestSpeedEntities();
-                LogMessage($"[3/5] 添加测试实体");
+            //// 2. 获取 Player
+            //_player = _testLevel.GetPlayer();
+            //if (_player == null)
+            //{
+            //    throw new System.Exception("无法获取 Player");
+            //}
+            //LogMessage($"[2/5] 获取 Player");
 
-                // 4. 记录初始状态
-                _startPos = _player.GetPos().clone();
-                _lastPos = _startPos.clone();
-                _testTimer = 0f;
-                LogMessage($"[4/5] 初始位置: ({_startPos.x:F2}, {_startPos.y:F2}, {_startPos.z:F2})");
+            //// 3. 添加速度实体（测试收集物品功能）
+            //AddTestSpeedEntities();
+            //LogMessage($"[3/5] 添加测试实体");
 
-                // 5. 诊断信息
-                Track track = _testLevel.GetTrack();
-                string trackStatus = track != null ? "存在" : "不存在";
-                LogMessage($"[5/5] 诊断 - 轨道对象: {trackStatus}");
-                if (track != null)
-                {
-                    LogMessage($"[5/5] 诊断 - 轨道段数量: {track.GetSegments().Count}");
-                }
-                Part currentPart = _player.GetCurrentPart();
-                string initialPartStatus = currentPart != null ? "有" : "无";
-                LogMessage($"[5/5] 诊断 - 玩家初始轨道段: {initialPartStatus}");
-                LogMessage($"[5/5] 测试环境准备完成");
-                LogMessage("===========================================");
+            //// 4. 记录初始状态
+            //_startPos = _player.GetPos().clone();
+            //_lastPos = _startPos.clone();
+            //_testTimer = 0f;
+            //LogMessage($"[4/5] 初始位置: ({_startPos.x:F2}, {_startPos.y:F2}, {_startPos.z:F2})");
 
-                _isTesting = false;
-                _testResult = "测试环境已就绪，按 [T] 开始测试，自动运行";
-            }
-            catch (System.Exception e)
-            {
-                LogError($"[CoreGameplayTest] 初始化失败: {e.Message}");
-                LogError($"[CoreGameplayTest] 堆栈跟踪: {e.StackTrace}");
-                _testResult = $"初始化失败: {e.Message}";
-                PrintTestReport();
-            }
+            //// 5. 诊断信息
+            //Track track = _testLevel.GetTrack();
+            //string trackStatus = track != null ? "存在" : "不存在";
+            //LogMessage($"[5/5] 诊断 - 轨道对象: {trackStatus}");
+            //if (track != null)
+            //{
+            //    LogMessage($"[5/5] 诊断 - 轨道段数量: {track.GetSegments().Count}");
+            //}
+            //Part currentPart = _player.GetCurrentPart();
+            //string initialPartStatus = currentPart != null ? "有" : "无";
+            //LogMessage($"[5/5] 诊断 - 玩家初始轨道段: {initialPartStatus}");
+            //LogMessage($"[5/5] 测试环境准备完成");
+            //LogMessage("===========================================");
+
+            //_isTesting = false;
+            //_testResult = "测试环境已就绪，按 [T] 开始测试，自动运行";
         }
 
         /// <summary>

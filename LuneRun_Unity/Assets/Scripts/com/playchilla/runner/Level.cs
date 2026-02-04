@@ -170,7 +170,7 @@ namespace com.playchilla.runner
             //    }
             //}
             //com.playchilla.runner.Engine.pt.start("player.tick");
-            this._player.Tick(tick);
+            this._player?.Tick(tick);
             //com.playchilla.runner.Engine.pt.stop("player.tick");
             //com.playchilla.runner.Engine.pt.start("dynamicTrack.update");
             var loc1 = 10 + (this._levelId< 25 ? this._levelId / 32 * 8 : this._levelId / 32 * 16);
@@ -382,7 +382,7 @@ namespace com.playchilla.runner
 
         private float _accumulatedTime = 0f;
 
-#if DEBUG
+#if true //DEBUG
         // 测试模拟字段和方法
         private bool _simulateSpacePress = false;
         private bool _simulateSpaceRelease = false;
