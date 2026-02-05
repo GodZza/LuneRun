@@ -39,7 +39,6 @@ namespace com.playchilla.runner
         internal object _game;
         internal object _prelude;
         internal object _bg;
-        internal GameManager _gameManager;
 
         // For self-created view tracking
         internal int _selfCreated = 0;
@@ -57,8 +56,8 @@ namespace com.playchilla.runner
             }
             
             // Get reference to GameManager
-            _gameManager = GameManager.Instance;
-            if (_gameManager != null)
+            //_gameManager = GameManager.Instance;
+            //if (_gameManager != null)
             {
                 UnityEngine.Debug.Log("Engine: Found GameManager");
             }
@@ -116,7 +115,7 @@ namespace com.playchilla.runner
         internal void UpdateLogin()
         {
             // Delegate to GameManager if available
-            if (_gameManager != null)
+            //if (_gameManager != null)
             {
                 // Let GameManager handle login state
                 return;
@@ -134,7 +133,7 @@ namespace com.playchilla.runner
         internal void UpdateMenu()
         {
             // Delegate to GameManager if available
-            if (_gameManager != null)
+            //if (_gameManager != null)
             {
                 // Let GameManager handle menu state
                 return;
@@ -155,7 +154,7 @@ namespace com.playchilla.runner
         internal void UpdatePrelude()
         {
             // Delegate to GameManager if available
-            if (_gameManager != null)
+            //if (_gameManager != null)
             {
                 // Let GameManager handle prelude state
                 return;
@@ -179,7 +178,7 @@ namespace com.playchilla.runner
         internal void UpdateGame()
         {
             // Delegate to GameManager if available
-            if (_gameManager != null)
+            //if (_gameManager != null)
             {
                 // Let GameManager handle game state
                 return;

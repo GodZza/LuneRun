@@ -29,7 +29,7 @@ namespace com.playchilla.runner.track
         private double _loadDistance = 200; // 触发加载的距离阈值
         private double _removeDistance = 300; // 触发卸载的距离阈值
 
-        private int _segmentCount = 0;     // 已生成的轨道段总数
+        private int _segmentCount = 0;     // 已生成的轨道段总数（删除旧的段数，不会降）
         private int _lastGenerateLevelId = -1;  // 上次生成时的levelId
         private int _generatedForLevel = 0;
 
@@ -110,6 +110,11 @@ namespace com.playchilla.runner.track
             }
         }
 
+        /// <summary>
+        /// 这里使用了分帧处理，每次调用生成一段轨道。直到 _segmentCount >= maxSegment
+        /// </summary>
+        /// <param name="levelId"></param>
+        /// <param name="maxSegment"></param>
         public void TryAdd(int levelId, int maxSegment)
         {
             // 如果levelId改变了，更新随机数seed（与AS代码一致）
@@ -180,6 +185,13 @@ namespace com.playchilla.runner.track
             _segmentCount += 1;
         }
 
+        /// <summary>
+        /// 返回true表示levelId的关卡已经生成完毕
+        /// </summary>
+        /// <param name="part"></param>
+        /// <param name="levelId">关卡id</param>
+        /// <param name="maxSegment">本关卡（levelId） 生成的最大段数</param>
+        /// <returns></returns>
         public bool Update(Part part, int levelId, int maxSegment)
         {
             this.TryRemove(part);             // 移除玩家后方旧的段

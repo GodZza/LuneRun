@@ -4,6 +4,11 @@ using com.playchilla.runner.player;
 using com.playchilla.runner.track;
 using com.playchilla.runner.track.entity;
 using shared.math;
+using System;
+using Unity.VisualScripting;
+using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
+using System.Threading;
 
 namespace LuneRun.Tests
 {
@@ -43,19 +48,11 @@ namespace LuneRun.Tests
         private System.Collections.Generic.List<string> _testLogs = new System.Collections.Generic.List<string>();
         private System.Collections.Generic.List<string> _testErrors = new System.Collections.Generic.List<string>();
 
+        public Camera cam;
+
         void Start()
         {
-            LogMessage("========== 核心玩法测试场景 ==========");
-            LogMessage("初始化测试环境...");
-
-            if (autoRunOnStart)
-            {
-                SetupTestEnvironment();
-            }
-            else
-            {
-                LogMessage("自动运行已禁用。请使用 GUI 按钮开始测试。");
-            }
+            SetupTestEnvironment(this.GetCancellationTokenOnDestroy()).Forget();
         }
 
         /// <summary>
@@ -134,12 +131,23 @@ namespace LuneRun.Tests
         /// <summary>
         /// 设置测试环境
         /// </summary>
-        public void SetupTestEnvironment()
+        public async UniTask SetupTestEnvironment(CancellationToken cancellationToken)
         {
 
             // 1. 创建测试 Level
-            var level = Utils.New<Level>();
-            level.Tick(Time.frameCount);
+            var settings = new Settings("1.0.0", true, true, false);
+            var level = Utils.New<Level>().Initialize(cam, null,null,testLevelId,true,true, settings, null);
+
+            while(!cancellationToken.IsCancellationRequested){
+
+                try{
+                    level.Tick(Time.frameCount);
+                }catch(Exception e){
+                    UnityEngine.Debug.LogException(e);
+                }
+                await UniTask.Yield(cancellationToken);
+            }
+            
 
             //// 2. 获取 Player
             //_player = _testLevel.GetPlayer();

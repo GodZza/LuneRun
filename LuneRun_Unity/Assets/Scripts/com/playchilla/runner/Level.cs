@@ -27,7 +27,7 @@ namespace com.playchilla.runner
         private GameObject _gameCont; // Placeholder for game container
         private World _world; // World instance
         private PlayerView _playerView;
-        private com.playchilla.runner.track.DynamicTrack _dynamicTrack; // 动态轨道系统
+        private DynamicTrack _dynamicTrack; // 动态轨道系统
         private KeyboardInput _keyboard; // Reference for input synchronization
         private Camera _camera;
         private MouseInput _mouse;
@@ -170,23 +170,33 @@ namespace com.playchilla.runner
             //    }
             //}
             //com.playchilla.runner.Engine.pt.start("player.tick");
-            this._player?.Tick(tick);
+
+            try
+            {
+                this._player?.Tick(tick);
+            }
+            catch { }
             //com.playchilla.runner.Engine.pt.stop("player.tick");
             //com.playchilla.runner.Engine.pt.start("dynamicTrack.update");
-            var loc1 = 10 + (this._levelId< 25 ? this._levelId / 32 * 8 : this._levelId / 32 * 16);
+
+            // 关卡段数限制，根据关卡id动态调整（TODO：做成可以配置的）
+            var maxSegment = 10 + (this._levelId< 25 ? this._levelId / 32 * 8 : this._levelId / 32 * 16);
             if (this._generateForLevel == 1) 
             {
-                loc1 = 17;
+                maxSegment = 17;
             }
             if (this._generateForLevel == 20) 
             {
-                loc1 = 2;
+                maxSegment = 2;
             }
-            if (this._dynamicTrack.Update(this._player.GetCurrentPart(), this._generateForLevel, loc1)) 
+            if (this._dynamicTrack.Update(this._player?.GetCurrentPart(), this._generateForLevel, maxSegment)) 
             {
+                // 可以生成下一关的轨道了
                 _generateForLevel += 1;
             }
-            var segmentLevelId =this._player.GetCurrentPart().segment.GetLevelId();
+
+            // 获取当前玩家站立的段的关卡id
+            var segmentLevelId =this._player?.GetCurrentPart()?.segment?.GetLevelId() ?? -1;
 
             if (segmentLevelId != this._levelId && segmentLevelId != -1) 
             {
@@ -301,11 +311,6 @@ namespace com.playchilla.runner
         }
 
         public Track GetTrack()
-        {
-            return null;
-        }
-
-        public Track getTrack()
         {
             return null;
         }
