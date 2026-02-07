@@ -5,6 +5,9 @@ using com.playchilla.runner.track;
 
 namespace com.playchilla.runner.track.generator
 {
+    // ============================================================================
+    // LongJumpTutorialGenerator - 长跳教程生成器
+    // ============================================================================
     public class LongJumpTutorialGenerator : SegmentGenerator, ISegmentGenerator
     {
         public LongJumpTutorialGenerator(Track track, global::shared.math.Random rnd, Materials materials) 

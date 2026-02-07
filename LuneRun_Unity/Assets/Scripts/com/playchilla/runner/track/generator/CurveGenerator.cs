@@ -2,9 +2,13 @@ using UnityEngine;
 using shared.math;
 using com.playchilla.runner;
 using com.playchilla.runner.track;
+using System;
 
 namespace com.playchilla.runner.track.generator
 {
+    // ============================================================================
+    // CurveGenerator - ÍäµÀÉú³ÉÆ÷
+    // ============================================================================
     public class CurveGenerator : SegmentGenerator, ISegmentGenerator
     {
         public CurveGenerator(Track track, global::shared.math.Random rnd, Materials materials) 
@@ -27,11 +31,11 @@ namespace com.playchilla.runner.track.generator
         {
             var direction = (2 * _rnd.NextDouble() - 1);
             var rotationY = (0.2 + difficulty) * direction * 180;
-            int parts = 10 + (int)(10 * Mathf.Abs((float)direction)) + (int)(_rnd.NextDouble() * (15 - 10 * difficulty));
+            var parts = 10 + 10 * Math.Abs(direction) + _rnd.NextDouble() * (15 - 10 * difficulty);
             var y = GetNextY(difficulty);
             
             AddForwardSegment(y, 0, 0, 2, segmentCount);
-            AddForwardSegment(y, (float)rotationY, 0, parts, segmentCount);
+            AddForwardSegment(y, (float)rotationY, 0, (int)parts, segmentCount);
         }
     }
 }

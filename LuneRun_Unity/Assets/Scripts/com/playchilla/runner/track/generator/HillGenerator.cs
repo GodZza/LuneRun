@@ -5,6 +5,9 @@ using com.playchilla.runner.track;
 
 namespace com.playchilla.runner.track.generator
 {
+    // ============================================================================
+    // HillGenerator - É½ÆÂÉú³ÉÆ÷
+    // ============================================================================
     public class HillGenerator : SegmentGenerator, ISegmentGenerator
     {
         private SlopeGenerator _up;
@@ -30,11 +33,11 @@ namespace com.playchilla.runner.track.generator
 
         public void Generate(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
         {
-            int hillCount = (int)_rnd.NextIntRange(1, 2);
+            var hillCount = _rnd.NextIntRange(1, 2);
 
             for (int i = 0; i < hillCount; i++)
             {
-                double y = _track.GetConnectPart().GetPos().y;
+                var y = _track.GetConnectPart().GetPos().y;
 
                 if (y > 190)
                 {

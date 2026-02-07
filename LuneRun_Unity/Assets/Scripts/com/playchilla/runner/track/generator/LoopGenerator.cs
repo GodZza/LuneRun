@@ -5,6 +5,9 @@ using com.playchilla.runner.track;
 
 namespace com.playchilla.runner.track.generator
 {
+    // ============================================================================
+    // LoopGenerator - 环形生成器
+    // ============================================================================
     public class LoopGenerator : SegmentGenerator, ISegmentGenerator
     {
         public LoopGenerator(Track track, global::shared.math.Random rnd, Materials materials) 

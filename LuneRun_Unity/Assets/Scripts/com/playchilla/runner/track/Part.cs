@@ -17,14 +17,14 @@ namespace com.playchilla.runner.track
 
         public Part next;
         public Part previous;
-        public GameObject mesh;
+        public MeshRenderer mesh;
 
         public Segment segment;
         public int partIndex;
 
         private readonly Vector3 _pos;
 
-        public Part(Segment segment, Vector3 pos, Vector3 dir, Vector3 normal, GameObject mesh, int index, float zRot)
+        public Part(Segment segment, Vector3 pos, Vector3 dir, Vector3 normal, MeshRenderer mesh, int index, float zRot)
         {
             this.segment = segment;
             this._pos = pos;

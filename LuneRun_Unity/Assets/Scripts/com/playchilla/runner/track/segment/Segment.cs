@@ -5,6 +5,10 @@ using com.playchilla.runner.track;
 using Debug =  shared.debug.Debug;
 namespace com.playchilla.runner.track.segment
 {
+
+    // ============================================================================
+    // Segment - ¹ìµÀ¶Î»ùÀà
+    // ============================================================================
     public class Segment
     {
         private List<Part> _parts = new List<Part>();
@@ -24,7 +28,7 @@ namespace com.playchilla.runner.track.segment
 
         public void AddPart(Part part)
         {
-            Part lastPart = GetLastPart();
+            var lastPart = GetLastPart();
             if (lastPart == null)
             {
                 _connectPart.next = part;

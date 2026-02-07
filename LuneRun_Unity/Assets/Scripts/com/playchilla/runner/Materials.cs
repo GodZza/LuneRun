@@ -1,12 +1,13 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace com.playchilla.runner
 {
     public class Materials
     {
-        private Dictionary<string, object> _materials = new Dictionary<string, object>();
+        private Dictionary<string, Material> _materials = new ();
         
-        public void RegisterMaterial(string name, object material)
+        public void RegisterMaterial(string name, Material material)
         {
             // Stub implementation
             _materials[name] = material;
@@ -19,5 +20,12 @@ namespace com.playchilla.runner
                 return _materials[name];
             return null;
         }
+
+        public List<Material> GetMaterialVector(string str)
+        {
+            return new List<Material>(); // TOdo;
+
+        }
     }
+
 }

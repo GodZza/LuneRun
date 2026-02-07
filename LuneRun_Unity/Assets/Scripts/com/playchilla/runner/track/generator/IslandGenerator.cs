@@ -5,6 +5,10 @@ using com.playchilla.runner.track;
 
 namespace com.playchilla.runner.track.generator
 {
+
+    // ============================================================================
+    // IslandGenerator - µºÓìÉú³ÉÆ÷
+    // ============================================================================
     public class IslandGenerator : SegmentGenerator, ISegmentGenerator
     {
         private HoleGenerator _holeGenerator;

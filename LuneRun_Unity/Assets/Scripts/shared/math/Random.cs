@@ -4,24 +4,24 @@ namespace shared.math
 {
     public class Random
     {
-        private int _seed=1;
+        private uint _seed=1;
 
-        public Random(int seed)
+        public Random(uint seed)
         {
             SetSeed(seed);
         }
 
-        public void SetSeed(int seed)
+        public void SetSeed(uint seed)
         {
             // In original ActionScript, seed must be > 0 and <= 2147483646
-            if (seed <= 0 || seed > 2147483646)
+            if (seed <= 0 || seed >= int.MaxValue)
             {
                 throw new ArgumentException($"Seed must be > 0 and <= 2147483646, got: {seed}");
             }
             _seed = seed;
         }
 
-        public int GetSeed()
+        public uint GetSeed()
         {
             return _seed;
         }
@@ -33,7 +33,7 @@ namespace shared.math
 
         public double NextDouble()
         {
-            return Gen() / 2147483647.0;
+            return 1.0 * Gen() / int.MaxValue;
         }
 
         public uint NextIntRange(double min, double max)
@@ -50,9 +50,8 @@ namespace shared.math
 
         private uint Gen()
         {
-            var seed = (uint)((ulong)_seed * 16807 % 2147483647);
-            _seed = (int)seed;
-            return seed;
+            _seed = _seed * 16807 % int.MaxValue;
+            return _seed;
         }
     }
 }

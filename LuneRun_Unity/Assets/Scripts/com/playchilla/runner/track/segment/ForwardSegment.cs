@@ -6,6 +6,9 @@ using UnityEngine.UIElements;
 
 namespace com.playchilla.runner.track.segment
 {
+    // ============================================================================
+    // ForwardSegment - Ç°½ø¹ìµÀ¶Î
+    // ============================================================================
     public class ForwardSegment : Segment
     {
         private const float PartLength = 10f; // Placeholder
@@ -54,7 +57,7 @@ namespace com.playchilla.runner.track.segment
                 var directionOffset = partMesh.transform.forward * Part.Length;
                 currentPosition +=directionOffset; //incrementBy
 
-                var newPart = new Part(this, currentPosition, directionOffset, partMesh.transform.up, partMesh, GetParts().Count, rotationZIncrement);
+                var newPart = new Part(this, currentPosition, directionOffset, partMesh.transform.up, partMesh.GetComponent<MeshRenderer>(), GetParts().Count, rotationZIncrement);
                 this.AddPart(newPart);
             }
         }
@@ -64,7 +67,7 @@ namespace com.playchilla.runner.track.segment
             if (connectPart != null)  return connectPart;
             var mesh = CreateMesh(material);
             mesh.name = "CreateConnectPartIfNull";
-            return new Part(null, new Vector3(0, y, 0), dir, Vector3.up, mesh, 0, 0);
+            return new Part(null, new Vector3(0, y, 0), dir, Vector3.up, mesh.GetComponent<MeshRenderer>(), 0, 0);
         }
 
         public static GameObject CreateMesh(Material material)

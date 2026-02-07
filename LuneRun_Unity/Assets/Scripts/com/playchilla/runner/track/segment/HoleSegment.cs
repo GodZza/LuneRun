@@ -4,6 +4,9 @@ using shared.math;
 
 namespace com.playchilla.runner.track.segment
 {
+    // ============================================================================
+    // HoleSegment - ¿Õ¶´¹ìµÀ¶Î
+    // ============================================================================
     public class HoleSegment : Segment
     {
         private int _parts;
@@ -13,24 +16,22 @@ namespace com.playchilla.runner.track.segment
         {
             _parts = parts;
 
-            var loc1 = direction;
-            loc1.y = 0;
-            loc1.Normalize();
+            var normalizedDirection = direction;
+            normalizedDirection.y = 0;
+            normalizedDirection.Normalize();
 
-            var loc2 = (Vector3)connectPart.GetPos();
-            loc2.y = 0;
+            var currentPosition = connectPart.GetPos();
+            currentPosition.y = 0;
 
-            var loc3 = loc1 * Part.Length;
+            var directionStep = normalizedDirection * Part.Length;
             
 
             for (int i = 0; i < parts - 1; i++)
             {
-                loc2 = loc2 + loc3;
-                var newPart = new Part(this, loc2, loc1, Vector3.up, null, GetParts().Count, 0);
+                currentPosition = currentPosition + directionStep;
+                var newPart = new Part(this, currentPosition, normalizedDirection, Vector3.up, null, GetParts().Count, 0);
                 AddPart(newPart);
             }
-
-            UnityEngine.Vector3 x;
         }
 
         public override int GetNumberOfParts()

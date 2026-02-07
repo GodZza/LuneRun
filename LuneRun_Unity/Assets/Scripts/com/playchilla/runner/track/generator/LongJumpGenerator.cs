@@ -5,6 +5,9 @@ using com.playchilla.runner.track;
 
 namespace com.playchilla.runner.track.generator
 {
+    // ============================================================================
+    // LongJumpGenerator - ³¤ÌøÉú³ÉÆ÷
+    // ============================================================================
     public class LongJumpGenerator : SegmentGenerator, ISegmentGenerator
     {
         private HoleGenerator _holeGenerator;

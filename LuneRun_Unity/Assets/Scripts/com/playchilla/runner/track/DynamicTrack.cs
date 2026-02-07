@@ -120,7 +120,7 @@ namespace com.playchilla.runner.track
             // 如果levelId改变了，更新随机数seed（与AS代码一致）
             if (levelId != _lastGenerateLevelId)
             {
-                var seed = levelId + 1;
+                uint seed = (uint)(levelId + 1);
 
                 // 特殊levelId的seed处理
                 if (levelId == 26)

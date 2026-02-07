@@ -5,6 +5,9 @@ using com.playchilla.runner.track;
 
 namespace com.playchilla.runner.track.generator
 {
+    // ============================================================================
+    // SlopeGenerator - Ð±ÆÂÉú³ÉÆ÷
+    // ============================================================================
     public class SlopeGenerator : SegmentGenerator, ISegmentGenerator
     {
         private bool _up;
