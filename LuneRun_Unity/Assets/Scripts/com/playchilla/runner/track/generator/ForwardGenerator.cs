@@ -19,9 +19,9 @@ namespace com.playchilla.runner.track.generator
             _level = level;
         }
 
-        public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
+        public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int levelId)
         {
-            if (segmentCount > 3 && previousGenerator is ForwardGenerator)
+            if (levelId > 3 && previousGenerator is ForwardGenerator)
                 return false;
                 
             if (_rnd.NextDouble() > 0.8 - 0.6 * difficulty)
@@ -30,17 +30,17 @@ namespace com.playchilla.runner.track.generator
             return true;
         }
 
-        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
+        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int levelId)
         {
             var y = GetNextY(difficulty);
             var parts = _parts != -1 ? _parts : 13 + (int)(_rnd.NextDouble() * 30);
             
-            if (_rnd.NextDouble() < 0.4 * difficulty && segmentCount > 16)
+            if (_rnd.NextDouble() < 0.4 * difficulty && levelId > 16)
             {
                 parts = Mathf.Max(4, parts - (int)(20 + 5 * difficulty));
             }
             
-            AddForwardSegment(y, 0, 0, parts, segmentCount);
+            AddForwardSegment(y, 0, 0, parts, levelId);
         }
 
         public void SetParts(int parts)

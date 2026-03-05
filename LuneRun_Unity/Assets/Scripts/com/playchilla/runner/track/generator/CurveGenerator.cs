@@ -16,7 +16,7 @@ namespace com.playchilla.runner.track.generator
         {
         }
 
-        public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
+        public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int levelId)
         {
             if (difficulty < 0.07)
                 return false;
@@ -27,15 +27,15 @@ namespace com.playchilla.runner.track.generator
             return true;
         }
 
-        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
+        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int levelId)
         {
             var direction = (2 * _rnd.NextDouble() - 1);
             var rotationY = (0.2 + difficulty) * direction * 180;
             var parts = 10 + 10 * Math.Abs(direction) + _rnd.NextDouble() * (15 - 10 * difficulty);
             var y = GetNextY(difficulty);
             
-            AddForwardSegment(y, 0, 0, 2, segmentCount);
-            AddForwardSegment(y, (float)rotationY, 0, (int)parts, segmentCount);
+            AddForwardSegment(y, 0, 0, 2, levelId);
+            AddForwardSegment(y, (float)rotationY, 0, (int)parts, levelId);
         }
     }
 }

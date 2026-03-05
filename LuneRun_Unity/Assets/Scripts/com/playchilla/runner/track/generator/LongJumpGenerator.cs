@@ -20,9 +20,9 @@ namespace com.playchilla.runner.track.generator
             _holeGenerator = new HoleGenerator(track, rnd, materials);
         }
 
-        public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
+        public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int levelId)
         {
-            if (segmentCount < 20)
+            if (levelId < 20)
                 return false;
 
             if (_rnd.NextDouble() > 0.05)
@@ -36,16 +36,16 @@ namespace com.playchilla.runner.track.generator
             _holeParts = holeParts;
         }
 
-        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
+        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int levelId)
         {
-            AddForwardSegment(GetNextY(difficulty), 0, -35, 10, segmentCount);
-            AddForwardSegment(GetNextY(difficulty), 0, 35, 15, segmentCount);
-            AddForwardSegment(GetNextY(difficulty), 0, 35, 10, segmentCount);
-            AddForwardSegment(GetNextY(difficulty), 0, -55, 15, segmentCount);
-            AddForwardSegment(GetNextY(difficulty), 0, 0, 2, segmentCount);
+            AddForwardSegment(GetNextY(difficulty), 0, -35, 10, levelId);
+            AddForwardSegment(GetNextY(difficulty), 0, 35, 15, levelId);
+            AddForwardSegment(GetNextY(difficulty), 0, 35, 10, levelId);
+            AddForwardSegment(GetNextY(difficulty), 0, -55, 15, levelId);
+            AddForwardSegment(GetNextY(difficulty), 0, 0, 2, levelId);
 
             _holeGenerator.SetParts(_holeParts != -1 ? _holeParts : (int)(50 + 30 * difficulty));
-            _holeGenerator.Generate(this, difficulty, segmentCount);
+            _holeGenerator.Generate(this, difficulty, levelId);
         }
     }
 }

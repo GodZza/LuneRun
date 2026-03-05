@@ -24,17 +24,17 @@ namespace com.playchilla.runner.track.generator
             _materials = materials;
         }
 
-        public Segment AddForwardSegment(float y, float rotationY, float rotationZ, int parts, int segmentCount, bool addStartPart = true, bool addEndPart = true)
+        public Segment AddForwardSegment(float y, float rotationY, float rotationZ, int parts, int levelId, bool addStartPart = true, bool addEndPart = true)
         {
             var connectPart = _track.GetConnectPart();
-            _segment = new ForwardSegment("XSegment", y, connectPart, connectPart.dir, rotationY, rotationZ, parts, _materials, segmentCount, addStartPart, addEndPart);
+            _segment = new ForwardSegment("XSegment", y, connectPart, connectPart.dir, rotationY, rotationZ, parts, _materials, levelId, addStartPart, addEndPart);
             return _track.AddSegment(_segment);
         }
 
-        public Segment AddHoleSegment(int parts, int segmentCount)
+        public Segment AddHoleSegment(int parts, int levelId)
         {
             var connectPart = _track.GetConnectPart();
-            _segment = new HoleSegment(connectPart, connectPart.dir, parts, segmentCount);
+            _segment = new HoleSegment(connectPart, connectPart.dir, parts, levelId);
             return _track.AddSegment(_segment);
         }
 

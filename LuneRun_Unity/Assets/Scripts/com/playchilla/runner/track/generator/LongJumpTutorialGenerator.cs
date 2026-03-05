@@ -15,16 +15,16 @@ namespace com.playchilla.runner.track.generator
         {
         }
 
-        public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
+        public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int levelId)
         {
             // Tutorial generator only runs in specific conditions
-            return segmentCount < 5 && difficulty < 0.5;
+            return levelId < 5 && difficulty < 0.5;
         }
 
-        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
+        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int levelId)
         {
             var y = GetNextY(difficulty);
-            AddForwardSegment(y, 0, 0, 3, segmentCount);
+            AddForwardSegment(y, 0, 0, 3, levelId);
         }
     }
 }

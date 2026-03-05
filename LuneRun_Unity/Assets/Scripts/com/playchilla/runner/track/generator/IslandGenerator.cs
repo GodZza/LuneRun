@@ -19,9 +19,9 @@ namespace com.playchilla.runner.track.generator
             _holeGenerator = new HoleGenerator(track, rnd, materials);
         }
 
-        public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
+        public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int levelId)
         {
-            if (segmentCount < 20)
+            if (levelId < 20)
                 return false;
                 
             if (_rnd.NextDouble() > 0.02 + 0.06 * difficulty)
@@ -30,13 +30,13 @@ namespace com.playchilla.runner.track.generator
             return true;
         }
 
-        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
+        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int levelId)
         {
             int islandCount = 3 + (int)(_rnd.NextDouble() * 6 * difficulty);
             for (int i = 0; i < islandCount; i++)
             {
-                AddForwardSegment(GetNextY(difficulty), 0, 0, _rnd.NextDouble() < 0.1 ? 4 : 7, segmentCount);
-                _holeGenerator.Generate(this, difficulty, segmentCount);
+                AddForwardSegment(GetNextY(difficulty), 0, 0, _rnd.NextDouble() < 0.1 ? 4 : 7, levelId);
+                _holeGenerator.Generate(this, difficulty, levelId);
             }
         }
     }

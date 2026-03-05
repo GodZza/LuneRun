@@ -18,7 +18,7 @@ namespace com.playchilla.runner.track.generator
         {
         }
 
-        public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
+        public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int levelId)
         {
             if (previousGenerator == null) // 第一个不生成洞
                 return false;
@@ -37,11 +37,11 @@ namespace com.playchilla.runner.track.generator
             _parts = parts;
         }
 
-        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
+        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int levelId)
         {
             if (previousGenerator is CurveGenerator || previousGenerator is LoopGenerator)
             {
-                AddForwardSegment(GetNextY(difficulty), 0, 0, 3, segmentCount);
+                AddForwardSegment(GetNextY(difficulty), 0, 0, 3, levelId);
             }
 
             var lastSegment = _track.GetLastSegment();
@@ -69,7 +69,7 @@ namespace com.playchilla.runner.track.generator
             }
 
             var parts = _parts != -1 ? _parts : 10 + 15 * _rnd.NextDouble();
-            AddHoleSegment((int)parts, segmentCount);
+            AddHoleSegment((int)parts, levelId);
         }
     }
 }

@@ -15,16 +15,16 @@ namespace com.playchilla.runner.track.generator
         {
         }
 
-        public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
+        public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int levelId)
         {
-            return segmentCount > 5 && _rnd.NextDouble() < 0.08 + 0.02 * difficulty;
+            return levelId > 5 && _rnd.NextDouble() < 0.08 + 0.02 * difficulty;
         }
 
-        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
+        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int levelId)
         {
             var y = GetNextY(difficulty);
             var parts = 35 + _rnd.NextDouble() * 30;
-            AddForwardSegment(y, 10, -360, (int)parts, segmentCount);
+            AddForwardSegment(y, 10, -360, (int)parts, levelId);
         }
     }
 }

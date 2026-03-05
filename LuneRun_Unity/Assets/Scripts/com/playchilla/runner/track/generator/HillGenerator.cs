@@ -20,9 +20,9 @@ namespace com.playchilla.runner.track.generator
             _down = new SlopeGenerator(track, rnd, materials, false);
         }
 
-        public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
+        public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int levelId)
         {
-            if (segmentCount < 3)
+            if (levelId < 3)
                 return false;
 
             if (_rnd.NextDouble() > 0.07 - 0.04 * difficulty)
@@ -31,7 +31,7 @@ namespace com.playchilla.runner.track.generator
             return true;
         }
 
-        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
+        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int levelId)
         {
             var hillCount = _rnd.NextIntRange(1, 2);
 
@@ -52,10 +52,10 @@ namespace com.playchilla.runner.track.generator
                     // slopeGen = y > 150 ? _down : _up;
                 }
 
-                AddForwardSegment(GetNextY(difficulty), 0, -35, 10, segmentCount);
-                AddForwardSegment(GetNextY(difficulty), 0, 35, 15, segmentCount);
-                AddForwardSegment(GetNextY(difficulty), 0, 35, 10, segmentCount);
-                AddForwardSegment(GetNextY(difficulty), 0, -35, 15, segmentCount);
+                AddForwardSegment(GetNextY(difficulty), 0, -35, 10, levelId);
+                AddForwardSegment(GetNextY(difficulty), 0, 35, 15, levelId);
+                AddForwardSegment(GetNextY(difficulty), 0, 35, 10, levelId);
+                AddForwardSegment(GetNextY(difficulty), 0, -35, 15, levelId);
             }
         }
     }

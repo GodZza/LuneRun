@@ -12,17 +12,17 @@ namespace com.playchilla.runner.track.generator
         {
         }
 
-        public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
+        public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int levelId)
         {
             // Always can run as fallback
             return true;
         }
 
-        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
+        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int levelId)
         {
             var y = GetNextY(difficulty);
             int parts = 5 + (int)(_rnd.NextDouble() * 10);
-            AddForwardSegment(y, 0, 0, parts, segmentCount);
+            AddForwardSegment(y, 0, 0, parts, levelId);
         }
     }
 }

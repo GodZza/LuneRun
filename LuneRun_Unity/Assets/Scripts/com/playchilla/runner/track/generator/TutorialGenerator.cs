@@ -27,12 +27,12 @@ namespace com.playchilla.runner.track.generator
         /// <param name="difficulty">位置参数</param>
         /// <param name="segmentCount">关卡标识</param>
         /// <returns>始终返回true，教程生成器是强制运行的</returns>
-        public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
+        public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int levelId)
         {
             return true;
         }
 
-        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
+        public void Generate(ISegmentGenerator previousGenerator, double difficulty, int levelId)
         {
             // 使用switch结构重构复杂的if-else逻辑[1](@ref)
             switch (_step)
@@ -48,47 +48,47 @@ namespace com.playchilla.runner.track.generator
                 case 8:
                 case 9:
                     // 前10步生成直线段
-                    AddForwardSegment(150, 0, 0, 20, segmentCount);
+                    AddForwardSegment(150, 0, 0, 20, levelId);
                     break;
 
                 case 10:
                     // 第10步生成坑洞
-                    _hg.Generate(this, 0, segmentCount);
+                    _hg.Generate(this, 0, levelId);
                     break;
 
                 case 11:
                     // 第11步生成50长度的直线段
-                    AddForwardSegment(150, 0, 0, 50, segmentCount);
+                    AddForwardSegment(150, 0, 0, 50, levelId);
                     break;
 
                 case 12:
                     // 第12步生成坑洞
-                    _hg.Generate(this, 0, segmentCount);
+                    _hg.Generate(this, 0, levelId);
                     break;
 
                 case 13:
                     // 第13步生成100长度的直线段
-                    AddForwardSegment(150, 0, 0, 100, segmentCount);
+                    AddForwardSegment(150, 0, 0, 100, levelId);
                     break;
 
                 case 14:
                     // 第14步生成坑洞
-                    _hg.Generate(this, 0, segmentCount);
+                    _hg.Generate(this, 0, levelId);
                     break;
 
                 case 15:
                     // 第15步生成60或100长度的直线段
-                    AddForwardSegment(60, 0, 0, 100, segmentCount);
+                    AddForwardSegment(60, 0, 0, 100, levelId);
                     break;
 
                 case 16:
                     // 第16步生成循环轨道
-                    _loopGenerator.Generate(previousGenerator, difficulty, segmentCount);
+                    _loopGenerator.Generate(previousGenerator, difficulty, levelId);
                     break;
 
                 case 17:
                     // 第17步生成60或100长度的直线段
-                    AddForwardSegment(60, 0, 0, 100, segmentCount);
+                    AddForwardSegment(60, 0, 0, 100, levelId);
                     break;
 
                 default:
