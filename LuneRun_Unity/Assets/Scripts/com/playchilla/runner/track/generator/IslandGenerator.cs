@@ -7,7 +7,7 @@ namespace com.playchilla.runner.track.generator
 {
 
     // ============================================================================
-    // IslandGenerator - µºÓìÉú³ÉÆ÷
+    // IslandGenerator - å²›å±¿ç”Ÿæˆå™¨
     // ============================================================================
     public class IslandGenerator : SegmentGenerator, ISegmentGenerator
     {

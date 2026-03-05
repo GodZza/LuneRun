@@ -2,11 +2,12 @@ using UnityEngine;
 using shared.math;
 using com.playchilla.runner;
 using com.playchilla.runner.track;
+using com.playchilla.runner.track.segment;
 
 namespace com.playchilla.runner.track.generator
 {
     // ============================================================================
-    // LongJumpGenerator - ³¤ÌøÉú³ÉÆ÷
+    // LongJumpGenerator - è¿œè·³ç”Ÿæˆå™¨
     // ============================================================================
     public class LongJumpGenerator : SegmentGenerator, ISegmentGenerator
     {

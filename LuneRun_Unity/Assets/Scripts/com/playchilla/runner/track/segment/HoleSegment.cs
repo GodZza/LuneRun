@@ -5,7 +5,7 @@ using shared.math;
 namespace com.playchilla.runner.track.segment
 {
     // ============================================================================
-    // HoleSegment - ¿Õ¶´¹ìµÀ¶Î
+    // HoleSegment - ç©ºæ´è½¨é“æ®µ
     // ============================================================================
     public class HoleSegment : Segment
     {

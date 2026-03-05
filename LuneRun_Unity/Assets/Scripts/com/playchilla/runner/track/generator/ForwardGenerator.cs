@@ -6,7 +6,7 @@ using com.playchilla.runner.track;
 namespace com.playchilla.runner.track.generator
 {
     // ============================================================================
-    // ForwardGenerator - Ç°½øÉú³ÉÆ÷
+    // ForwardGenerator - å‰å‘ç”Ÿæˆå™¨
     // ============================================================================
     public class ForwardGenerator : SegmentGenerator, ISegmentGenerator
     {

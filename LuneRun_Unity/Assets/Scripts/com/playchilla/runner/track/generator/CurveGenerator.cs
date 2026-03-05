@@ -7,7 +7,7 @@ using System;
 namespace com.playchilla.runner.track.generator
 {
     // ============================================================================
-    // CurveGenerator - ÍäµÀÉú³ÉÆ÷
+    // CurveGenerator - å¼¯é“ç”Ÿæˆå™¨
     // ============================================================================
     public class CurveGenerator : SegmentGenerator, ISegmentGenerator
     {

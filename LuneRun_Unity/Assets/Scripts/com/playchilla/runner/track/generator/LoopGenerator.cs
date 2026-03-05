@@ -6,7 +6,7 @@ using com.playchilla.runner.track;
 namespace com.playchilla.runner.track.generator
 {
     // ============================================================================
-    // LoopGenerator - »·ĞÎÉú³ÉÆ÷
+    // LoopGenerator - ç¯å½¢èµ›é“ç”Ÿæˆå™¨
     // ============================================================================
     public class LoopGenerator : SegmentGenerator, ISegmentGenerator
     {

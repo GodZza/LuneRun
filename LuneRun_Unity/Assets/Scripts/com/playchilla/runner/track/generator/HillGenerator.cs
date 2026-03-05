@@ -6,7 +6,7 @@ using com.playchilla.runner.track;
 namespace com.playchilla.runner.track.generator
 {
     // ============================================================================
-    // HillGenerator - É½ÆÂÉú³ÉÆ÷
+    // HillGenerator - å±±ä¸˜ç”Ÿæˆå™¨
     // ============================================================================
     public class HillGenerator : SegmentGenerator, ISegmentGenerator
     {

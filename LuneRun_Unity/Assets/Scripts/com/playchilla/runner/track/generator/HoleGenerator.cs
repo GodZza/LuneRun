@@ -7,7 +7,7 @@ using com.playchilla.runner.track.segment;
 namespace com.playchilla.runner.track.generator
 {
     // ============================================================================
-    // HoleGenerator - ¿Õ¶´Éú³ÉÆ÷
+    // HoleGenerator - ç©ºæ´ç”Ÿæˆå™¨
     // ============================================================================
     public class HoleGenerator : SegmentGenerator, ISegmentGenerator
     {
@@ -20,10 +20,10 @@ namespace com.playchilla.runner.track.generator
 
         public bool CanRun(ISegmentGenerator previousGenerator, double difficulty, int segmentCount)
         {
-            if (previousGenerator == null) // ²»ÄÜÒ»¿ªÊ¼¾Í´´½¨¶´
+            if (previousGenerator == null) // ç¬¬ä¸€ä¸ªä¸ç”Ÿæˆæ´
                 return false;
             
-            if (previousGenerator is HoleGenerator || _track.GetLastSegment() is HoleSegment) // ÉÏÒ»¸öÊÇ¶´£¬²»ÔÙ´´½¨
+            if (previousGenerator is HoleGenerator || _track.GetLastSegment() is HoleSegment) // é¿å…è¿ç»­æ´
                 return false;
 
             if (_rnd.NextDouble() > 0.85 + 0.15 * difficulty)
@@ -49,7 +49,7 @@ namespace com.playchilla.runner.track.generator
             var currentSegmentParts = currentSegment.GetParts();
             var warningMaterials = _materials.GetMaterialVector("Warning");
             var warningMaterialCount = warningMaterials.Count;
-            var currentPartIndex = currentSegmentParts.Count - 1; //ÍùºóÊıÔö¼Ó¾¯¸æ
+            var currentPartIndex = currentSegmentParts.Count - 1; //ä»åå¾€å‰
 
             for(var i = 1; i < warningMaterialCount; ++i)
             {

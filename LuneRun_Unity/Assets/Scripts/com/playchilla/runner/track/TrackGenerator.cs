@@ -54,7 +54,7 @@ namespace com.playchilla.runner.track
                     int index = (int)(rnd.NextDouble() * _generators.Count);
                     generator = _generators[index];
                 }
-                while (!generator.CanRun(_lastGenerator, difficulty, count));
+                while (!generator.CanRun(_lastGenerator, difficulty, levelId));
 
                 // 生成段
                 generator.Generate(_lastGenerator, difficulty, levelId);
