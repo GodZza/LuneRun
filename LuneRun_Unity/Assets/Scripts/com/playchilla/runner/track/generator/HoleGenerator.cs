@@ -49,7 +49,7 @@ namespace com.playchilla.runner.track.generator
             var currentSegmentParts = currentSegment.GetParts();
             var warningMaterials = _materials.GetMaterialVector("Warning");
             var warningMaterialCount = warningMaterials.Count;
-            var currentPartIndex = currentSegmentParts.Count - 1;
+            var currentPartIndex = currentSegmentParts.Count - 1; //往后数增加警告
 
             for(var i = 1; i < warningMaterialCount; ++i)
             {
